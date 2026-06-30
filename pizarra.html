@@ -56,6 +56,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:#f8f7ff;color:#1a1a2e;m
 .badge-count{background:#7c3aed;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px}
 .results-bar{font-size:12px;color:#7c3aed;font-weight:600;padding:5px 10px;background:#f5f3ff;border-bottom:1px solid #e8e0ff;display:none}
 .results-bar.visible{display:block}
+.pizarra-tabs{display:flex;gap:0;background:#fff;border:1px solid #e8e0ff;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.pizarra-tab{flex:1;padding:11px 16px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;color:#6b7280;border:none;background:none;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.pizarra-tab.active{background:#7c3aed;color:#fff}
+.pizarra-tab:not(.active):hover{background:#f5f3ff;color:#7c3aed}
+.pizarra-tab .tab-count{background:rgba(255,255,255,.3);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 7px}
+.pizarra-tab:not(.active) .tab-count{background:#ede9fe;color:#7c3aed}
 
 /* TABLE WRAPPER — scroll horizontal en móvil */
 .table-wrap{background:#fff;border-radius:12px;border:1px solid #e8e0ff;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 1px 4px rgba(109,40,217,.07)}
@@ -195,6 +201,14 @@ tr:hover td{background:#faf8ff}
   <div class="stat"><div class="stat-label">Por cobrar</div><div class="stat-val red" id="st-porcobrar">$0</div></div>
 </div>
 
+<div class="pizarra-tabs">
+  <div class="pizarra-tab active" id="tab-activos" onclick="switchPizarraTab('activos')">
+    <i class="ti ti-clipboard-list"></i> Activos <span class="tab-count" id="count-activos">0</span>
+  </div>
+  <div class="pizarra-tab" id="tab-entregados" onclick="switchPizarraTab('entregados')">
+    <i class="ti ti-check"></i> Pagados y Entregados <span class="tab-count" id="count-entregados">0</span>
+  </div>
+</div>
 <div class="toolbar">
   <div class="toolbar-row">
     <div class="search-box">
@@ -352,6 +366,31 @@ const ESTADOS_CITA=[
 const KEEP_WITH_PAGADO=['pagado','listo','entregap','entregado'];
 
 let pedidos=[],filterSel=[],editId=null,popupPid=null,fotoDataURL='',tipoActual='pedido';
+let pizarraTab='activos'; // 'activos' o 'entregados'
+
+function esPagadoYEntregado(p){
+  return p.estados.includes('pagado') && p.estados.includes('entregado');
+}
+
+function switchPizarraTab(tab){
+  pizarraTab=tab;
+  document.getElementById('tab-activos').classList.toggle('active',tab==='activos');
+  document.getElementById('tab-entregados').classList.toggle('active',tab==='entregados');
+  renderTable();
+}
+
+function sortByFechaEntrega(list){
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  return list.sort((a,b)=>{
+    const fa=a.tipo==='cita'?a.fechaCita:a.entrega;
+    const fb=b.tipo==='cita'?b.fechaCita:b.entrega;
+    // Sin fecha van al fondo
+    if(!fa&&!fb)return 0;
+    if(!fa)return 1;
+    if(!fb)return -1;
+    return new Date(fa)-new Date(fb);
+  });
+}
 
 const eInfoFor=(k,tipo)=>{const l=tipo==='cita'?ESTADOS_CITA:ESTADOS_PEDIDO;return l.find(e=>e.key===k)||ESTADOS_PEDIDO.find(e=>e.key===k)||{key:k,label:k,cls:'e-disenando',dot:'#7c3aed'}};
 const fmt=n=>(isNaN(n)||n==='')?'—':'$'+Number(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
@@ -413,7 +452,15 @@ function getFiltered(){
   const q=document.getElementById('search').value.toLowerCase().trim();
   const mes=document.getElementById('f-mes').value,anio=document.getElementById('f-anio').value;
   const desde=document.getElementById('f-desde').value,hasta=document.getElementById('f-hasta').value;
-  return pedidos.filter(p=>{
+  
+  // Separar por pestaña
+  const base=pedidos.filter(p=>pizarraTab==='entregados'?esPagadoYEntregado(p):!esPagadoYEntregado(p));
+  
+  // Actualizar contadores
+  document.getElementById('count-activos').textContent=pedidos.filter(p=>!esPagadoYEntregado(p)).length;
+  document.getElementById('count-entregados').textContent=pedidos.filter(p=>esPagadoYEntregado(p)).length;
+  
+  const filtered=base.filter(p=>{
     const mq=!q||(p.cliente||'').toLowerCase().includes(q)||(p.nota||'').toLowerCase().includes(q);
     const me=!filterSel.length||p.estados.some(k=>filterSel.includes(k));
     let mf=true;
@@ -427,6 +474,10 @@ function getFiltered(){
     } else if(mes||desde||hasta)mf=false;
     return mq&&me&&mf;
   });
+  
+  // Ordenar activos por fecha de entrega más próxima
+  if(pizarraTab==='activos') return sortByFechaEntrega(filtered);
+  return filtered;
 }
 
 function renderTable(){
