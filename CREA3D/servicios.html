@@ -712,34 +712,24 @@
   .btn-export:hover { background: var(--accent2); color: white; border-color: var(--accent2); }
 </style>
 <style>
+/* Top header */
 .top-header{background:#0d0d1a;padding:.8rem 1.2rem;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08)}
 .top-header img{width:42px;height:42px;border-radius:10px;object-fit:contain;background:#fff;padding:3px}
 .top-empresa{font-size:10px;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
 .top-name{font-size:16px;font-weight:700;color:#fff}
+/* Tabs */
 .section-tabs{display:flex;background:#0d0d1a;padding:0 1rem;border-bottom:1px solid rgba(255,255,255,.08)}
 .section-tab{padding:13px 20px;color:rgba(255,255,255,.45);font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:7px}
 .section-tab.active{color:#fff;border-bottom-color:#7c3aed}
 .section-tab:hover{color:rgba(255,255,255,.8)}
-.page{display:block}
-.btn-volver-menu{position:fixed;bottom:20px;left:20px;background:#2d1b69;color:#fff;border:none;border-radius:50px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(45,27,105,.45);display:flex;align-items:center;gap:7px;z-index:9999;text-decoration:none;transition:all .2s}
+/* Ocultar page divs del sistema original */
+.page{display:block!important}
+/* Modales siempre ocultos hasta que se abran */
+.modal-overlay{display:none!important}
+.modal-overlay.open{display:flex!important;align-items:center!important;justify-content:center!important;z-index:9999!important}
+/* Botón volver */
+.btn-volver-menu{position:fixed;bottom:20px;left:20px;background:#2d1b69;color:#fff;border:none;border-radius:50px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(45,27,105,.45);display:flex;align-items:center;gap:7px;z-index:9998;text-decoration:none;transition:all .2s}
 .btn-volver-menu:hover{background:#4c1d95;transform:translateY(-2px)}
-
-/* Fix modales */
-.modal-overlay { 
-  z-index: 9000 !important; 
-  display: none !important;
-}
-.modal-overlay.open { 
-  display: flex !important; 
-  align-items: center !important; 
-  justify-content: center !important; 
-}
-.modal { 
-  z-index: 9001 !important; 
-  max-height: 90vh; 
-  overflow-y: auto;
-  position: relative;
-}
 </style>
 </head>
 <body>
@@ -853,14 +843,355 @@
   </div>
 </div>
 
-<div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-venta')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveVenta()">Guardar</button>
+<div class="modal-overlay" id="modal-servicio" style="display:none">
+  <div class="modal" style="width:620px;max-width:98vw">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-servicio-title">Nuevo Servicio</span>
+      <button class="modal-close" onclick="closeModal('modal-servicio')">✕</button>
     </div>
-<div class="modal-footer">
+    <div class="modal-body">
+      <input type="hidden" id="serv-edit-idx" value="-1">
+      <input type="hidden" id="serv-imagen-data" value="">
+
+      <!-- Info del cliente -->
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:10px;font-weight:600">👤 Datos del Cliente</div>
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="form-group">
+          <label>Cliente *</label>
+          <input type="text" id="serv-cliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="serv-telefono" placeholder="(998) 000-0000">
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="serv-fecha">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="serv-estado">
+            <option>Activo</option>
+            <option>Pendiente</option>
+            <option>Completado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tipo de pieza -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;font-weight:600">🗂 Tipo de Pieza</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-pieza-mecanica">
+            <input type="radio" name="serv-pieza" value="Pieza Mecánica" id="serv-pieza-mecanica" onchange="updatePiezaTipo()"> ⚙️ Pieza Mecánica
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-pieza-figura">
+            <input type="radio" name="serv-pieza" value="Figura" id="serv-pieza-figura" onchange="updatePiezaTipo()"> 🗿 Figura
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-pieza-personalizado">
+            <input type="radio" name="serv-pieza" value="Personalizado" id="serv-pieza-personalizado" onchange="updatePiezaTipo()"> ✨ Personalizado
+          </label>
+        </div>
+      </div>
+
+      <!-- Tipo de servicio -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;font-weight:600">🛠 Tipo de Servicio</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-diseno">
+            <input type="radio" name="serv-tipo" value="Diseño" id="serv-tipo-diseno" onchange="updateServTipo()"> 🎨 Diseño
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-impresion">
+            <input type="radio" name="serv-tipo" value="Impresión" id="serv-tipo-impresion" onchange="updateServTipo()"> 🖨 Impresión
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-ambos">
+            <input type="radio" name="serv-tipo" value="Diseño+Impresión" id="serv-tipo-ambos" onchange="updateServTipo()"> 🎨🖨 Diseño + Impresión
+          </label>
+        </div>
+      </div>
+
+      <!-- Detalles -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:16px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600">📋 Detalles del Trabajo</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Descripción</label>
+            <textarea id="serv-desc" rows="2" placeholder="Describe el trabajo..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Tipo de Material</label>
+            <input type="text" id="serv-material" placeholder="Ej: PLA, Resina, ABS">
+          </div>
+        </div>
+      </div>
+
+      <!-- Imágenes de referencia (máx 5) -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600">🖼 Imágenes de Referencia</div>
+          <span id="serv-img-counter" style="font-size:11px;color:var(--muted)">0 / 5</span>
+        </div>
+
+        <!-- Grid de thumbnails -->
+        <div id="serv-img-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px"></div>
+
+        <!-- Zona de carga -->
+        <div id="serv-img-drop"
+          onclick="document.getElementById('serv-img-input').click()"
+          style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color 0.2s"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="handleImgDrop(event)">
+          <div style="font-size:24px">📁</div>
+          <div style="font-size:12px;color:var(--muted)">Clic para subir o arrastra aquí</div>
+          <div style="font-size:10px;color:var(--muted)">JPG, PNG — máx 2MB por imagen — hasta 5 imágenes</div>
+          <input type="file" id="serv-img-input" accept="image/jpeg,image/png" multiple style="display:none" onchange="handleImgSelect(event)">
+        </div>
+      </div>
+
+      <!-- Costos -->
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;font-weight:600">💰 Costos</div>
+
+        <!-- Factura toggle -->
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-sinfactura">
+            <input type="radio" name="serv-factura" value="sin_factura" id="serv-sin-factura" onchange="updateServFactura()" checked> 🧾 Sin Factura
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-confactura">
+            <input type="radio" name="serv-factura" value="con_factura" id="serv-con-factura" onchange="updateServFactura()"> 🧾✅ Con Factura
+          </label>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group" id="serv-costo-diseno-group">
+            <label>Costo del Diseño ($)</label>
+            <input type="number" id="serv-costo-diseno" value="0" step="0.01" min="0" oninput="calcServPrecio()">
+          </div>
+          <div class="form-group" id="serv-costo-impresion-group">
+            <label>Costo de Impresión ($)</label>
+            <input type="number" id="serv-costo-impresion" value="0" step="0.01" min="0" oninput="calcServPrecio()">
+          </div>
+          <div class="form-group">
+            <label>Anticipo ($)</label>
+            <input type="number" id="serv-anticipo" value="0" step="0.01" min="0" oninput="calcServPrecio()">
+          </div>
+          <!-- Pagado toggle -->
+          <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end">
+            <label style="margin-bottom:6px">Estado de Pago</label>
+            <div style="display:flex;gap:10px">
+              <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-nopagado">
+                <input type="radio" name="serv-pago" value="no" id="serv-no-pagado" onchange="updateServPagado()" checked> ⏳ Pend. Anticipo
+              </label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.15s" id="lbl-serv-sipagado">
+                <input type="radio" name="serv-pago" value="si" id="serv-pagado" onchange="updateServPagado()"> ✅ Pagado
+              </label>
+            </div>
+          </div>
+
+          <!-- Subtotal (siempre visible) -->
+          <div class="form-group">
+            <label>Subtotal ($)</label>
+            <input type="number" id="serv-subtotal" value="0" step="0.01" readonly
+              style="opacity:0.7;background:var(--surface2);border-color:var(--border);color:var(--text)">
+          </div>
+
+          <!-- IVA — solo visible con factura -->
+          <div class="form-group" id="serv-iva-group" style="display:none">
+            <label style="color:var(--warning)">IVA 16% ($)</label>
+            <input type="number" id="serv-iva" value="0" step="0.01" readonly
+              style="opacity:0.8;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.4);color:var(--warning);font-weight:600">
+          </div>
+
+          <div class="form-group">
+            <label>💰 Precio Total de Ganancia ($)</label>
+            <input type="number" id="serv-precio-total" value="0" step="0.01" readonly
+              style="opacity:0.8;background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.4);color:var(--success);font-weight:600">
+          </div>
+          <div class="form-group full">
+            <label>💳 Total a Saldar ($)</label>
+            <input type="number" id="serv-precio" value="0" step="0.01" readonly
+              style="opacity:0.8;background:rgba(255,107,53,0.08);border-color:rgba(255,107,53,0.4);color:var(--accent);font-weight:700;font-size:15px">
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;display:flex;flex-direction:column;gap:3px" id="serv-formula-hint">
+          <div>📐 <strong style="color:var(--text)">Subtotal</strong> = Costo Diseño + Costo Impresión</div>
+          <div id="serv-iva-hint" style="display:none">📐 <strong style="color:var(--warning)">IVA 16%</strong> = Subtotal × 0.16</div>
+          <div>💰 <strong style="color:var(--success)">Precio Total</strong> = Subtotal<span id="serv-hint-iva-label" style="display:none"> + IVA</span></div>
+          <div>💳 <strong style="color:var(--accent)">Total a Saldar</strong> = Precio Total − Anticipo</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-servicio')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveServicio()">Guardar</button>
     </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-mantenimiento" style="display:none">
+  <div class="modal" style="width:700px;max-width:98vw">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-mant-title">🔧 Nueva Nota de Recepción</span>
+      <button class="modal-close" onclick="closeModal('modal-mantenimiento')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mant-edit-idx" value="-1">
+
+      <!-- Sección 1: Fechas -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;font-weight:600">Datos de Recepción</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Fecha de Recepción</label>
+            <input type="date" id="mant-fecha">
+          </div>
+          <div class="form-group">
+            <label>Hora</label>
+            <input type="time" id="mant-hora">
+          </div>
+          <div class="form-group">
+            <label>Estado del Servicio</label>
+            <select id="mant-estado">
+              <option>Recibido</option>
+              <option>En diagnóstico</option>
+              <option>En reparación</option>
+              <option>Listo</option>
+              <option>Entregado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 2: Datos del Cliente -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px;font-weight:600">Datos del Cliente</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre del Cliente *</label>
+            <input type="text" id="mant-cliente" placeholder="Nombre completo">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" id="mant-telefono" placeholder="(998) 000-0000">
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="mant-correo" placeholder="correo@ejemplo.com">
+          </div>
+          <div class="form-group full">
+            <label>Dirección</label>
+            <input type="text" id="mant-direccion" placeholder="Calle, número, colonia">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 3: Datos de la Impresora -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:12px;font-weight:600">Datos de la Impresora</div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Tecnología</label>
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer"><input type="radio" name="mant-tech" value="FDM" id="mant-tech-fdm"> FDM</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer"><input type="radio" name="mant-tech" value="Resina" id="mant-tech-resina"> Resina</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer"><input type="radio" name="mant-tech" value="Otra" id="mant-tech-otra"> Otra</label>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Marca</label>
+            <input type="text" id="mant-marca" placeholder="Ej: Creality, Bambu Lab">
+          </div>
+          <div class="form-group">
+            <label>Modelo</label>
+            <input type="text" id="mant-modelo" placeholder="Ej: Ender 3, X1C">
+          </div>
+          <div class="form-group full">
+            <label>Número de Serie</label>
+            <input type="text" id="mant-serie" placeholder="S/N del equipo">
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Motivo de Ingreso</label>
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" id="mant-mot-diag"> Diagnóstico</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" id="mant-mot-mant"> Mantenimiento</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" id="mant-mot-rep"> Reparación</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 4: Problema reportado -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warning);margin-bottom:12px;font-weight:600">Problema Reportado por el Cliente</div>
+        <div class="form-group">
+          <textarea id="mant-problema" rows="3" placeholder="Describe el problema tal como lo reporta el cliente..."></textarea>
+        </div>
+      </div>
+
+      <!-- Sección 5: Estado físico al recibir -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--warning);margin-bottom:12px;font-weight:600">Estado Físico al Recibir</div>
+        <div style="display:grid;gap:8px">
+          <div style="display:grid;grid-template-columns:1fr 60px 60px 1fr;gap:8px;align-items:center;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:0 4px">
+            <span>Concepto</span><span style="text-align:center">SÍ</span><span style="text-align:center">NO</span><span>Observaciones</span>
+          </div>
+          <div id="estado-fisico-items"></div>
+        </div>
+      </div>
+
+      <!-- Sección 6: Accesorios -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:12px;font-weight:600">Accesorios Entregados</div>
+        <div style="display:grid;gap:8px">
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:8px;align-items:center;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:0 4px">
+            <span>Accesorio</span><span style="text-align:center">Entregado</span><span>Observaciones</span>
+          </div>
+          <div id="accesorios-items"></div>
+        </div>
+      </div>
+
+      <!-- Sección 7: Observaciones del técnico -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600">Observaciones del Técnico</div>
+        <div class="form-group">
+          <textarea id="mant-obs-tecnico" rows="3" placeholder="Observaciones iniciales del técnico..."></textarea>
+        </div>
+      </div>
+
+      <!-- Sección 8: Costos -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 16px;border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;font-weight:600">💰 Costos del Servicio</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Costo del Diagnóstico ($)</label>
+            <input type="number" id="mant-costo-diag" value="0" step="0.01" min="0" oninput="calcMantTotal()">
+          </div>
+          <div class="form-group">
+            <label>Costo de Refacciones ($)</label>
+            <input type="number" id="mant-costo-refacc" value="0" step="0.01" min="0" oninput="calcMantTotal()">
+          </div>
+          <div class="form-group">
+            <label>Costo del Mantenimiento ($)</label>
+            <input type="number" id="mant-costo-mant" value="0" step="0.01" min="0" oninput="calcMantTotal()">
+          </div>
+          <div class="form-group">
+            <label>💰 Costo Total ($)</label>
+            <input type="number" id="mant-costo-total" value="0" step="0.01" readonly
+              style="opacity:0.85;background:rgba(255,107,53,0.08);border-color:rgba(255,107,53,0.4);color:var(--accent);font-weight:700;font-size:15px">
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Costo Total = Diagnóstico + Refacciones + Mantenimiento
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-mantenimiento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMantenimiento()">Guardar Nota</button>
+    </div>
+  </div>
+</div>
 
 <a href="index.html" class="btn-volver-menu">🏠 Menú</a>
 
@@ -2991,6 +3322,7 @@ renderDashboard();
 </script>
 
 <script>
+// Override funciones no necesarias
 window.renderDashboard = function(){};
 window.showPage = function(){};
 
@@ -3003,7 +3335,7 @@ function switchSection(sec){
   if(sec==='mantenimiento') renderMantenimiento();
 }
 
-// load() ya se ejecutó arriba en el script del inventario
+// load() ya corrió en el script principal — solo renderizar
 renderServicios();
 </script>
 </body>
