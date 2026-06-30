@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador CREA3D Cancún</title>
+<style>
+:root {
+  --primary: #FF6B00;
+  --primary-dark: #CC5500;
+  --secondary: #1A1A2E;
+  --bg: #F2F4F7;
+  --card: #FFFFFF;
+  --border: #E0E4EA;
+  --text: #2C2C2C;
+  --text-light: #7A7A8C;
+  --yellow: #FFF59D;
+  --yellow-border: #F9A825;
+  --shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* HEADER */
+header {
+  background: var(--secondary); color: white;
+  display: flex; align-items: stretch;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  position: sticky; top: 0; z-index: 100; height: 64px;
+}
+.header-brand {
+  background: var(--primary); padding: 0 24px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 20px; font-weight: 800; letter-spacing: 1px; white-space: nowrap;
+}
+.header-brand small { font-size: 11px; font-weight: 400; opacity: 0.85; display: block; letter-spacing: 0; }
+.header-nav { display: flex; align-items: center; padding: 0 16px; gap: 4px; }
+.nav-btn {
+  background: none; border: 2px solid transparent; color: rgba(255,255,255,0.65);
+  padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+  transition: all 0.18s;
+}
+.nav-btn:hover { color: white; border-color: rgba(255,255,255,0.25); }
+.nav-btn.active { color: var(--primary); border-color: var(--primary); background: rgba(255,107,0,0.1); }
+.header-right { margin-left: auto; display: flex; align-items: center; padding-right: 20px; }
+.badge { background: var(--primary); color: white; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 700; }
+
+/* LAYOUT */
+.app { display: flex; min-height: calc(100vh - 64px); }
+
+/* SIDEBAR */
+.sidebar {
+  width: 270px; min-width: 240px; background: var(--secondary); color: #ccc;
+  padding: 20px 16px; overflow-y: auto;
+  position: sticky; top: 64px; height: calc(100vh - 64px);
+}
+.sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+.cfg-group { margin-bottom: 20px; }
+.cfg-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #2a2a40; }
+.cfg-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; gap: 8px; }
+.cfg-row label { font-size: 12px; color: #aaa; line-height: 1.3; flex: 1; }
+.cfg-input-wrap { position: relative; width: 80px; flex-shrink: 0; }
+.cfg-input-wrap input {
+  width: 100%; padding: 6px 28px 6px 8px; background: #252540; border: 1px solid #3a3a58;
+  border-radius: 6px; color: white; font-size: 12px; text-align: right; outline: none;
+}
+.cfg-input-wrap input:focus { border-color: var(--primary); }
+.cfg-unit { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); font-size: 10px; color: #555; pointer-events: none; }
+.save-btn {
+  width: 100%; background: var(--primary); color: white; border: none; border-radius: 7px;
+  padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: all 0.2s;
+}
+.save-btn:hover { background: var(--primary-dark); }
+.saved-ok { text-align: center; font-size: 11px; color: #4CAF50; margin-top: 6px; display: none; }
+
+/* TOGGLE */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.toggle-row:last-of-type { border-bottom: none; }
+.toggle-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.toggle { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 22px; transition: 0.25s; }
+.toggle-slider:before { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:white; left:3px; top:3px; transition:0.25s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+.conditional { display: none; padding: 10px 0 4px; }
+.conditional.show { display: block; }
+
+/* MAIN */
+.main { flex: 1; padding: 24px 28px; overflow-y: auto; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* TOP BAR */
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.top-bar h2 { font-size: 20px; font-weight: 800; color: var(--secondary); }
+.top-bar p { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+/* LAYOUT */
+.layout-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.layout-bottom { margin-top: 20px; }
+.dg-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.data-card { background: var(--card); border-radius: 10px; padding: 16px 18px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.dc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 6px; }
+.dc-val { font-size: 22px; font-weight: 800; color: var(--secondary); line-height: 1; }
+.dc-val.accent { color: var(--primary); }
+.dc-unit { font-size: 11px; color: var(--text-light); margin-top: 3px; }
+
+/* CARDS */
+.card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+.card-head {
+  background: var(--secondary); color: white; padding: 12px 18px;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.3px; display: flex; align-items: center; gap: 8px;
+}
+.card-body { padding: 18px; }
+
+/* FORM */
+.fg { margin-bottom: 13px; }
+.fg label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 5px; }
+input[type=text], input[type=number], select, textarea {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: 7px; font-size: 14px; color: var(--text); background: #FAFBFC;
+  outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,107,0,0.1);
+}
+
+/* YELLOW INPUT — like Excel */
+.yellow-input { background: var(--yellow) !important; border-color: var(--yellow-border) !important; font-weight: 700; }
+.yellow-input:focus { box-shadow: 0 0 0 3px rgba(249,168,37,0.2) !important; }
+.yellow-label { color: #7A6000 !important; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.input-u { position: relative; }
+.input-u input { padding-right: 38px; }
+.iu { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text-light); font-weight: 600; pointer-events: none; }
+
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* SECTION LABEL */
+.sec-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 10px; margin-top: 4px; }
+
+/* BUTTONS */
+.btn-calc {
+  width: 100%; background: var(--primary); color: white; border: none; border-radius: 8px;
+  padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.2s;
+  margin-top: 4px; letter-spacing: 0.3px;
+}
+.btn-calc:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,107,0,0.3); }
+.btn-sm {
+  background: white; border: 1.5px solid var(--border); color: var(--text-light);
+  border-radius: 7px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.18s; display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-sm:hover { border-color: var(--primary); color: var(--primary); }
+.btn-sm.danger:hover { border-color: #e74c3c; color: #e74c3c; }
+.btn-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+/* RESULTS TABLE */
+.result-table { width: 100%; border-collapse: collapse; }
+.result-table tr td { padding: 9px 14px; border-bottom: 1px solid #F0F0F5; font-size: 14px; }
+.result-table tr:last-child td { border-bottom: none; }
+.result-table .r-label { color: var(--text-light); }
+.result-table .r-val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.result-table tr.section-row td { background: #F7F8FC; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); padding: 6px 14px; }
+.result-table tr.highlight-row td { background: rgba(255,107,0,0.06); }
+.result-table tr.highlight-row .r-label { font-weight: 700; color: var(--text); }
+.result-table tr.highlight-row .r-val { color: var(--primary); font-size: 16px; }
+.result-table tr.total-row td { background: var(--secondary); color: white; font-weight: 800; font-size: 16px; border-bottom: none; }
+.result-table tr.total-row .r-val { color: #FFB74D; font-size: 18px; }
+.result-table .r-pct { font-size: 11px; color: #bbb; font-weight: 400; }
+.result-table tr.hidden-row { display: none; }
+.result-table tr.discount-val .r-val { color: #e74c3c; }
+
+/* HISTORY */
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table th { background: var(--secondary); color: white; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; }
+.history-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.history-table tr:hover td { background: #FFF8F2; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.empty-state .ico { font-size: 56px; margin-bottom: 14px; }
+
+/* PRINT */
+@media print {
+  header, .sidebar, .btn-row, .btn-calc, .top-bar button { display: none !important; }
+  .main { padding: 0; }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: #3a3a58; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <span style="font-size:28px">🖨️</span>
+    <div>CREA3D <small>Cancún · Cotizador de Impresión 3D</small></div>
+  </div>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showSection('nueva', this)">➕ Nueva Cotización</button>
+    <button class="nav-btn" onclick="showSection('historial', this)">📋 Historial</button>
+  </nav>
+  <div class="header-right">
+    <span class="badge" id="badge-count">0 cotizaciones</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR: CONFIGURACIÓN DE TARIFAS -->
+  <aside class="sidebar">
+    <div class="sidebar-title">⚙️ Configuración</div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Mano de obra</div>
+      <div class="cfg-row">
+        <label>Tarifa operador</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-labor" value="150" min="0" step="10">
+          <span class="cfg-unit">$/hr</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Energía eléctrica</div>
+      <div class="cfg-row">
+        <label>Potencia impresora</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-power" value="263" min="0" step="5">
+          <span class="cfg-unit">W</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Tarifa eléctrica</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-elec" value="0.183" min="0" step="0.01">
+          <span class="cfg-unit">$/kWh</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Depreciación de impresora</div>
+      <div class="cfg-row">
+        <label>Costo de la impresora</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-printer-cost" value="15000" min="0" step="500">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Vida útil estimada</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-printer-life" value="2440" min="1" step="100">
+          <span class="cfg-unit">hr</span>
+        </div>
+      </div>
+      <div style="font-size:10px; color:#555; margin-top:2px; line-height:1.4">
+        Tasa actual: <span id="c-depr-display" style="color:#aaa">$6.15/hr</span>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Diseño 3D</div>
+      <div class="cfg-row">
+        <label>Tarifa diseño por hora</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-design-hour" value="150" min="0" step="10">
+          <span class="cfg-unit">$/hr</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Porcentajes de costo</div>
+      <div class="cfg-row">
+        <label>% Merma (sobre filamento)</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-waste" value="8" min="0" max="50" step="0.5">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>% Riesgo (sobre subtotal)</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-risk" value="4.71" min="0" max="50" step="0.1">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>% Ganancia (sobre gastos)</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-profit" value="160" min="0" max="500" step="5">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Postprocesado</div>
+      <div class="cfg-row">
+        <label>Lijado / acabado (por hora)</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-sanding" value="80" min="0" step="5">
+          <span class="cfg-unit">$/h</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Pintura básica</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-paint-basic" value="120" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Pintura avanzada</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-paint-adv" value="280" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Soporte / ensamblaje</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-support" value="60" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Tarifas de envío</div>
+      <div class="cfg-row">
+        <label>Local — Cancún</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-ship-local" value="80" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Nacional</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-ship-national" value="180" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Express</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-ship-express" value="320" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="cfg-group-label">Fiscal</div>
+      <div class="cfg-row">
+        <label>IVA</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-iva" value="16" min="0" max="30" step="1">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveConfig()">💾 Guardar configuración</button>
+    <div class="saved-ok" id="saved-ok">✅ Guardado</div>
+
+    <div style="height:20px"></div>
+    <div style="font-size:10px; color:#444; line-height:1.5; padding: 10px; background:#12122a; border-radius:6px">
+      💡 Los valores en <span style="color:#F9A825">amarillo</span> del formulario son los que cambias por cada cotización (material, STL, extras, envíos).<br>
+      Los valores aquí son tus tarifas fijas.
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- NUEVA COTIZACIÓN -->
+    <section class="section active" id="section-nueva">
+      <div class="top-bar">
+        <div>
+          <h2>Nueva Cotización</h2>
+          <p>Ingresa los datos de la pieza — el desglose se calcula automáticamente</p>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn-sm" onclick="saveQuote()">💾 Guardar</button>
+          <button class="btn-sm" onclick="printQuote()">🖨️ Imprimir</button>
+          <button class="btn-sm danger" onclick="resetForm()">🗑️ Limpiar</button>
+        </div>
+      </div>
+
+      <!-- DATOS GENERALES arriba -->
+      <div class="layout-bottom" style="margin-top:0; margin-bottom:20px">
+        <div class="dg-row">
+          <div class="data-card">
+            <div class="dc-label">Tiempo de impresión</div>
+            <div class="dc-val" id="dg-time">—</div>
+            <div class="dc-unit">minutos totales</div>
+          </div>
+          <div class="data-card">
+            <div class="dc-label">Consumo eléctrico</div>
+            <div class="dc-val" id="dg-kwh">—</div>
+            <div class="dc-unit">kWh usados</div>
+          </div>
+          <div class="data-card">
+            <div class="dc-label">Filamento usado</div>
+            <div class="dc-val" id="dg-grams">—</div>
+            <div class="dc-unit">gramos</div>
+          </div>
+          <div class="data-card">
+            <div class="dc-label">Total de gastos</div>
+            <div class="dc-val" id="dg-gastos" style="color:#e74c3c">—</div>
+            <div class="dc-unit">antes de ganancia</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA SUPERIOR: formulario + desglose -->
+      <div class="layout-top">
+
+        <!-- IZQUIERDA: DATOS DE LA PIEZA -->
+        <div class="card">
+          <div class="card-head">📋 Datos de la Pieza</div>
+          <div class="card-body">
+
+            <div class="sec-label">Identificación</div>
+            <div class="row2">
+              <div class="fg">
+                <label>Nombre de la parte</label>
+                <input type="text" id="f-part" placeholder="Ej: Engrane industrial 50mm" oninput="calcular()">
+              </div>
+              <div class="fg">
+                <label>Cliente</label>
+                <input type="text" id="f-client" placeholder="Ej: Juan García" oninput="calcular()">
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sec-label">Tiempos</div>
+            <div class="row4">
+              <div class="fg">
+                <label>Días de impresión</label>
+                <div class="input-u">
+                  <input type="number" id="f-days" value="0" min="0" oninput="calcular()">
+                  <span class="iu">días</span>
+                </div>
+              </div>
+              <div class="fg">
+                <label>Horas</label>
+                <div class="input-u">
+                  <input type="number" id="f-hr" value="0" min="0" max="23" oninput="calcular()">
+                  <span class="iu">hr</span>
+                </div>
+              </div>
+              <div class="fg">
+                <label>Minutos</label>
+                <div class="input-u">
+                  <input type="number" id="f-min" value="0" min="0" max="59" oninput="calcular()">
+                  <span class="iu">min</span>
+                </div>
+              </div>
+              <div class="fg">
+                <label>Tiempo hombre</label>
+                <div class="input-u">
+                  <input type="number" id="f-labor" value="0" min="0" oninput="calcular()">
+                  <span class="iu">min</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sec-label">Material e Impresión</div>
+            <div class="row2" style="margin-bottom:10px">
+              <div class="fg">
+                <label>Tipo de material</label>
+                <select id="f-material" onchange="onMaterialChange()">
+                  <option value="pla">PLA</option>
+                  <option value="petg">PETG</option>
+                  <option value="abs">ABS</option>
+                  <option value="tpu">TPU (Flexible)</option>
+                  <option value="asa">ASA</option>
+                  <option value="nylon">Nylon</option>
+                  <option value="resina">Resina Estándar</option>
+                  <option value="resina-pro">Resina Pro</option>
+                  <option value="otro">Otro / Custom</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>Color</label>
+                <select id="f-color" onchange="calcular()">
+                  <option value="0">Estándar (sin costo extra)</option>
+                  <option value="30">Color específico (+$30)</option>
+                  <option value="60">Multicolor (+$60)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="fg">
+                <label>Gramos de filamento</label>
+                <div class="input-u">
+                  <input type="number" id="f-grams" value="0" min="0" oninput="calcular()">
+                  <span class="iu">g</span>
+                </div>
+              </div>
+              <div class="fg">
+                <label class="yellow-label">Costo por kg del material</label>
+                <div class="input-u">
+                  <input type="number" id="f-matkg" value="250" min="0" step="10" class="yellow-input" oninput="calcular()">
+                  <span class="iu">$/kg</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="fg" style="max-width:180px; margin-top:10px">
+              <label>Cantidad de piezas</label>
+              <div class="input-u">
+                <input type="number" id="f-qty" value="1" min="1" oninput="calcular()">
+                <span class="iu">pzs</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sec-label">✏️ Diseño 3D</div>
+            <div class="toggle-row" style="border-bottom:none; padding-bottom:0">
+              <span class="toggle-label">¿Requiere diseño/modelado 3D?</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-design" onchange="toggleSection('t-design','c-design'); calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="conditional" id="c-design">
+              <div class="row2" style="margin-top:10px">
+                <div class="fg">
+                  <label>Horas de diseño estimadas</label>
+                  <div class="input-u">
+                    <input type="number" id="f-design-h" value="1" min="0.5" step="0.5" oninput="calcular()">
+                    <span class="iu">h</span>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>Complejidad del diseño</label>
+                  <select id="f-design-complex" onchange="calcular()">
+                    <option value="1.0">Normal</option>
+                    <option value="1.3">Media</option>
+                    <option value="1.6">Alta</option>
+                    <option value="2.0">Muy alta / Paramétrico</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sec-label">🔧 Postprocesado y Acabados</div>
+
+            <!-- Lijado -->
+            <div class="toggle-row">
+              <span class="toggle-label">Lijado / acabado de superficie</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-sand" onchange="toggleSection('t-sand','c-sand'); calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="conditional" id="c-sand">
+              <div class="fg" style="max-width:180px; margin-top:8px">
+                <label>Horas de lijado</label>
+                <div class="input-u">
+                  <input type="number" id="f-sand-h" value="1" min="0.5" step="0.5" oninput="calcular()">
+                  <span class="iu">h</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pintura -->
+            <div class="toggle-row">
+              <span class="toggle-label">Pintura / acabado cromático</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-paint" onchange="toggleSection('t-paint','c-paint'); calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="conditional" id="c-paint">
+              <div class="fg" style="margin-top:8px">
+                <label>Tipo de pintura</label>
+                <select id="f-paint-type" onchange="calcular()">
+                  <option value="basic">Básica (un color, esmalte)</option>
+                  <option value="adv">Avanzada (varios colores / efectos)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Soportes -->
+            <div class="toggle-row">
+              <span class="toggle-label">Remoción de soportes y limpieza</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-support" onchange="calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <!-- Ensamblaje -->
+            <div class="toggle-row" style="border-bottom:none">
+              <span class="toggle-label">Ensamblaje / inserción de insertos</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-assembly" onchange="calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sec-label">Envío y Extras</div>
+            <div class="row2" style="margin-bottom:12px">
+              <div class="fg">
+                <label>Tipo de envío</label>
+                <select id="f-ship-type" onchange="calcular()">
+                  <option value="0">Sin envío (recoger en tienda)</option>
+                  <option value="local">Local — Cancún</option>
+                  <option value="national">Nacional</option>
+                  <option value="express">Express</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>Urgencia / Prioridad</label>
+                <select id="f-urgency" onchange="calcular()">
+                  <option value="0">Normal (sin cargo)</option>
+                  <option value="20">Urgente +20%</option>
+                  <option value="40">Muy urgente +40%</option>
+                  <option value="60">Express mismo día +60%</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Descuento toggle -->
+            <div class="toggle-row">
+              <span class="toggle-label">Aplicar descuento</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-discount" onchange="toggleSection('t-discount','c-discount'); calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="conditional" id="c-discount">
+              <div class="row2">
+                <div class="fg">
+                  <label>Descuento</label>
+                  <div class="input-u">
+                    <input type="number" id="f-discount" value="10" min="1" max="80" oninput="calcular()">
+                    <span class="iu">%</span>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>Motivo</label>
+                  <input type="text" id="f-discount-reason" placeholder="Ej: Cliente frecuente">
+                </div>
+              </div>
+            </div>
+
+            <!-- IVA toggle -->
+            <div class="toggle-row">
+              <span class="toggle-label">¿Incluir IVA en la cotización?</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-iva" onchange="calcular()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="fg" style="margin-top:12px">
+              <label>Notas adicionales para el cliente</label>
+              <textarea id="f-notes" rows="2" placeholder="Tiempo de entrega, consideraciones especiales..." style="resize:vertical" oninput="calcular()"></textarea>
+            </div>
+
+            <button class="btn-calc" onclick="calcular()">🧮 Calcular cotización</button>
+          </div>
+        </div>
+
+        <!-- DERECHA: DESGLOSE DE COSTOS -->
+        <div class="card">
+          <div class="card-head">
+            💰 Desglose de Costos
+            <span id="r-quotenum" style="margin-left:auto; font-size:12px; opacity:0.7">COT-001</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="result-table">
+              <tbody>
+                <tr class="section-row"><td colspan="2">Costos de producción</td></tr>
+                <tr><td class="r-label">⏱️ Tiempo hombre</td><td class="r-val" id="r-labor">$0.00</td></tr>
+                <tr><td class="r-label">⚡ Costo de energía</td><td class="r-val" id="r-energy">$0.00</td></tr>
+                <tr><td class="r-label">🧱 Costo de filamento</td><td class="r-val" id="r-material">$0.00</td></tr>
+                <tr><td class="r-label">✏️ Costo del STL / diseño</td><td class="r-val" id="r-stl">$0.00</td></tr>
+                <tr id="row-design" class="hidden-row"><td class="r-label">🖊️ Diseño 3D <span class="r-pct" id="r-design-pct"></span></td><td class="r-val" id="r-design">$0.00</td></tr>
+                <tr><td class="r-label">🔧 Depreciación impresora</td><td class="r-val" id="r-depr">$0.00</td></tr>
+                <tr><td class="r-label">🗑️ Merma <span class="r-pct" id="r-waste-pct"></span></td><td class="r-val" id="r-waste">$0.00</td></tr>
+                <tr><td class="r-label">⚠️ Riesgo <span class="r-pct" id="r-risk-pct"></span></td><td class="r-val" id="r-risk">$0.00</td></tr>
+                <tr class="section-row"><td colspan="2">Adicionales</td></tr>
+                <tr><td class="r-label">🔧 Postprocesado y acabados</td><td class="r-val" id="r-extras">$0.00</td></tr>
+                <tr><td class="r-label">🌈 Color</td><td class="r-val" id="r-color">$0.00</td></tr>
+                <tr><td class="r-label">🚚 Envíos</td><td class="r-val" id="r-ship">$0.00</td></tr>
+                <tr class="section-row"><td colspan="2">Rentabilidad</td></tr>
+                <tr class="highlight-row">
+                  <td class="r-label">📈 Ganancia <span class="r-pct" id="r-profit-pct"></span></td>
+                  <td class="r-val" id="r-profit">$0.00</td>
+                </tr>
+                <tr id="row-urgency" class="hidden-row">
+                  <td class="r-label">⚡ Urgencia <span class="r-pct" id="r-urgency-pct"></span></td>
+                  <td class="r-val" id="r-urgency">$0.00</td>
+                </tr>
+                <tr id="row-discount" class="hidden-row discount-val">
+                  <td class="r-label">🏷️ Descuento <span class="r-pct" id="r-discount-pct"></span></td>
+                  <td class="r-val" id="r-discount">-$0.00</td>
+                </tr>
+                <tr id="row-iva" class="hidden-row">
+                  <td class="r-label">🧾 IVA <span class="r-pct" id="r-iva-pct"></span></td>
+                  <td class="r-val" id="r-iva">$0.00</td>
+                </tr>
+                <tr class="total-row">
+                  <td class="r-label" style="color:white; font-size:15px">💵 TOTAL (MXN)</td>
+                  <td class="r-val" id="r-total">$0.00</td>
+                </tr>
+              </tbody>
+            </table>
+            <div id="r-notes-display" style="display:none; padding:10px 14px; font-size:12px; color:var(--text-light); border-top:1px solid var(--border); font-style:italic;"></div>
+          </div>
+        </div>
+
+      </div><!-- /layout-top -->
+
+    </section>
+
+    <!-- HISTORIAL -->
+    <section class="section" id="section-historial">
+      <div class="top-bar">
+        <div>
+          <h2>Historial de Cotizaciones</h2>
+          <p>Todas tus cotizaciones guardadas</p>
+        </div>
+        <button class="btn-sm danger" onclick="clearHistory()">🗑️ Limpiar todo</button>
+      </div>
+      <div class="card" id="history-container">
+        <div class="empty-state">
+          <div class="ico">📋</div>
+          <p>No hay cotizaciones guardadas aún.<br>Calcula y guarda una para verla aquí.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ==================== MATERIAL PRICES ($/kg defaults) ====================
+const MAT_PRICES = {
+  pla:         250,
+  petg:        320,
+  abs:         300,
+  tpu:         450,
+  asa:         400,
+  nylon:       600,
+  resina:      550,
+  'resina-pro':850,
+  otro:        350,
+};
+
+// ==================== CONFIG ====================
+let cfg = {
+  labor: 150,
+  power: 263,
+  elec: 0.183,
+  printerCost: 15000,
+  printerLife: 2440,
+  waste: 8,
+  risk: 4.71,
+  profit: 160,
+  shipLocal: 80,
+  shipNational: 180,
+  shipExpress: 320,
+  iva: 16,
+  designHour: 150,
+  sandingHour: 80,
+  paintBasic: 120,
+  paintAdv: 280,
+  support: 60,
+};
+
+let history = [];
+let quoteCounter = 1;
+
+// ==================== INIT ====================
+function init() {
+  loadConfig();
+  updateDeprDisplay();
+  loadHistory();
+  calcular();
+  updateBadge();
+}
+
+function updateDeprDisplay() {
+  const rate = (cfg.printerCost / cfg.printerLife).toFixed(2);
+  const el = document.getElementById('c-depr-display');
+  if (el) el.textContent = `$${rate}/hr`;
+}
+
+// ==================== SAVE/LOAD CONFIG ====================
+function saveConfig() {
+  cfg.labor        = parseFloat(document.getElementById('c-labor').value) || 150;
+  cfg.power        = parseFloat(document.getElementById('c-power').value) || 263;
+  cfg.elec         = parseFloat(document.getElementById('c-elec').value) || 0.183;
+  cfg.printerCost  = parseFloat(document.getElementById('c-printer-cost').value) || 15000;
+  cfg.printerLife  = parseFloat(document.getElementById('c-printer-life').value) || 2440;
+  cfg.waste        = parseFloat(document.getElementById('c-waste').value) || 8;
+  cfg.risk         = parseFloat(document.getElementById('c-risk').value) || 4.71;
+  cfg.profit       = parseFloat(document.getElementById('c-profit').value) || 160;
+  cfg.shipLocal    = parseFloat(document.getElementById('c-ship-local').value) || 80;
+  cfg.shipNational = parseFloat(document.getElementById('c-ship-national').value) || 180;
+  cfg.shipExpress  = parseFloat(document.getElementById('c-ship-express').value) || 320;
+  cfg.iva          = parseFloat(document.getElementById('c-iva').value) || 16;
+  cfg.designHour   = parseFloat(document.getElementById('c-design-hour').value) || 150;
+  cfg.sandingHour  = parseFloat(document.getElementById('c-sanding').value) || 80;
+  cfg.paintBasic   = parseFloat(document.getElementById('c-paint-basic').value) || 120;
+  cfg.paintAdv     = parseFloat(document.getElementById('c-paint-adv').value) || 280;
+  cfg.support      = parseFloat(document.getElementById('c-support').value) || 60;
+  localStorage.setItem('crea3d_cfg3', JSON.stringify(cfg));
+  updateDeprDisplay();
+  const el = document.getElementById('saved-ok');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 2000);
+  calcular();
+}
+
+function loadConfig() {
+  const s = localStorage.getItem('crea3d_cfg3');
+  if (s) { try { cfg = { ...cfg, ...JSON.parse(s) }; } catch(e) {} }
+  document.getElementById('c-labor').value        = cfg.labor;
+  document.getElementById('c-power').value        = cfg.power;
+  document.getElementById('c-elec').value         = cfg.elec;
+  document.getElementById('c-printer-cost').value = cfg.printerCost;
+  document.getElementById('c-printer-life').value = cfg.printerLife;
+  document.getElementById('c-waste').value        = cfg.waste;
+  document.getElementById('c-risk').value         = cfg.risk;
+  document.getElementById('c-profit').value       = cfg.profit;
+  document.getElementById('c-ship-local').value   = cfg.shipLocal;
+  document.getElementById('c-ship-national').value= cfg.shipNational;
+  document.getElementById('c-ship-express').value = cfg.shipExpress;
+  document.getElementById('c-iva').value          = cfg.iva;
+  document.getElementById('c-design-hour').value  = cfg.designHour;
+  document.getElementById('c-sanding').value      = cfg.sandingHour;
+  document.getElementById('c-paint-basic').value  = cfg.paintBasic;
+  document.getElementById('c-paint-adv').value    = cfg.paintAdv;
+  document.getElementById('c-support').value      = cfg.support;
+}
+
+// ==================== MATERIAL CHANGE ====================
+function onMaterialChange() {
+  const mat = document.getElementById('f-material').value;
+  const price = MAT_PRICES[mat] || 250;
+  document.getElementById('f-matkg').value = price;
+  calcular();
+}
+
+// ==================== TOGGLE ====================
+function toggleSection(checkId, divId) {
+  const checked = document.getElementById(checkId).checked;
+  document.getElementById(divId).classList.toggle('show', checked);
+}
+
+// ==================== CALCULATE ====================
+function calcular() {
+  const qty      = Math.max(1, parseFloat(document.getElementById('f-qty').value) || 1);
+  const days     = parseFloat(document.getElementById('f-days').value) || 0;
+  const hr       = parseFloat(document.getElementById('f-hr').value) || 0;
+  const min      = parseFloat(document.getElementById('f-min').value) || 0;
+  const laborMin = parseFloat(document.getElementById('f-labor').value) || 0;
+  const grams    = parseFloat(document.getElementById('f-grams').value) || 0;
+  const matKg    = parseFloat(document.getElementById('f-matkg').value) || 0;
+  const colorExtra = parseFloat(document.getElementById('f-color').value) || 0;
+
+  // Postprocesado
+  let cPost = 0;
+  if (document.getElementById('t-sand').checked) {
+    const sh = parseFloat(document.getElementById('f-sand-h').value) || 0;
+    cPost += sh * cfg.sandingHour * qty;
+  }
+  if (document.getElementById('t-paint').checked) {
+    const ptype = document.getElementById('f-paint-type').value;
+    cPost += (ptype === 'basic' ? cfg.paintBasic : cfg.paintAdv) * qty;
+  }
+  if (document.getElementById('t-support').checked)  cPost += cfg.support * qty;
+  if (document.getElementById('t-assembly').checked) cPost += cfg.support * qty;
+
+  // Ship from dropdown
+  const shipType = document.getElementById('f-ship-type').value;
+  let cShip = 0;
+  if (shipType === 'local')    cShip = cfg.shipLocal;
+  if (shipType === 'national') cShip = cfg.shipNational;
+  if (shipType === 'express')  cShip = cfg.shipExpress;
+
+  const printMin  = days * 24 * 60 + hr * 60 + min;
+  const printHr   = printMin / 60;
+  const powerKw   = cfg.power / 1000;
+  const deprRate  = cfg.printerCost / cfg.printerLife;
+
+  // --- COSTS ---
+  const cLabor    = (laborMin / 60) * cfg.labor * qty;
+  const cEnergy   = printHr * powerKw * cfg.elec * qty;
+  const cMaterial = grams * (matKg / 1000) * qty;
+  const cDepr     = printHr * deprRate * qty;
+  const cWaste    = cMaterial * (cfg.waste / 100);
+
+  // Design cost
+  let cDesign = 0;
+  const designOn = document.getElementById('t-design').checked;
+  if (designOn) {
+    const dh = parseFloat(document.getElementById('f-design-h').value) || 0;
+    const dc = parseFloat(document.getElementById('f-design-complex').value) || 1;
+    cDesign = dh * cfg.designHour * dc;
+  }
+
+  const subtotal1   = cLabor + cEnergy + cMaterial + cDepr + cWaste + cDesign + cPost;
+  const cRisk       = subtotal1 * (cfg.risk / 100);
+  const totalGastos = subtotal1 + cRisk;
+
+  const cColor   = colorExtra * qty;
+  const cProfit  = totalGastos * (cfg.profit / 100);
+
+  let total = totalGastos + cColor + cShip + cProfit;
+
+  // Urgency surcharge
+  const urgencyPct = parseFloat(document.getElementById('f-urgency').value) || 0;
+  const cUrgency   = urgencyPct > 0 ? total * (urgencyPct / 100) : 0;
+  total += cUrgency;
+
+  // Discount
+  let cDiscount = 0;
+  const discountOn = document.getElementById('t-discount').checked;
+  if (discountOn) {
+    const dp = parseFloat(document.getElementById('f-discount').value) || 0;
+    cDiscount = total * (dp / 100);
+    total -= cDiscount;
+  }
+
+  // IVA
+  let cIva = 0;
+  const ivaOn = document.getElementById('t-iva').checked;
+  if (ivaOn) {
+    cIva = total * (cfg.iva / 100);
+    total += cIva;
+  }
+
+  // --- UPDATE TABLE ---
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmt(val); };
+  set('r-labor',    cLabor);
+  set('r-energy',   cEnergy);
+  set('r-material', cMaterial);
+  set('r-stl',      0);
+  set('r-depr',     cDepr);
+  set('r-waste',    cWaste);
+  set('r-risk',     cRisk);
+  set('r-extras',   cPost);
+  // Design row
+  toggleRow('row-design', designOn && cDesign > 0);
+  const dh2 = designOn ? (parseFloat(document.getElementById('f-design-h').value)||0) : 0;
+  const dc2 = designOn ? (parseFloat(document.getElementById('f-design-complex').value)||1) : 1;
+  setTxt('r-design-pct', `(${dh2}h × ×${dc2})`);
+  set('r-design', cDesign);
+  set('r-color',    cColor);
+  set('r-ship',     cShip);
+  set('r-profit',   cProfit);
+  set('r-total',    total);
+
+  // percentages
+  setTxt('r-waste-pct',   `(${cfg.waste}% filamento)`);
+  setTxt('r-risk-pct',    `(${cfg.risk}% subtotal)`);
+  setTxt('r-profit-pct',  `(${cfg.profit}% gastos)`);
+
+  // Urgency row
+  toggleRow('row-urgency', urgencyPct > 0);
+  setTxt('r-urgency-pct', `(+${urgencyPct}%)`);
+  set('r-urgency', cUrgency);
+
+  // Discount row
+  toggleRow('row-discount', discountOn && cDiscount > 0);
+  const dp2 = discountOn ? (parseFloat(document.getElementById('f-discount').value)||0) : 0;
+  setTxt('r-discount-pct', `(-${dp2}%)`);
+  const discEl = document.getElementById('r-discount');
+  if (discEl) discEl.textContent = '-' + fmt(cDiscount);
+
+  // IVA row
+  toggleRow('row-iva', ivaOn);
+  setTxt('r-iva-pct', `(${cfg.iva}%)`);
+  set('r-iva', cIva);
+
+  // Notes
+  const notes = document.getElementById('f-notes').value.trim();
+  const notesEl = document.getElementById('r-notes-display');
+  if (notesEl) {
+    notesEl.style.display = notes ? 'block' : 'none';
+    notesEl.textContent = notes ? '📝 ' + notes : '';
+  }
+
+  // DATOS GENERALES
+  const kwhUsed = printHr * powerKw;
+  document.getElementById('dg-time').textContent  = printMin.toFixed(0);
+  document.getElementById('dg-kwh').textContent   = kwhUsed.toFixed(3);
+  document.getElementById('dg-grams').textContent = (grams * qty).toFixed(0);
+  document.getElementById('dg-gastos').textContent= fmt(totalGastos);
+
+  window._calc = { cLabor, cEnergy, cMaterial, cDepr, cWaste, cRisk, cDesign, cPost, cProfit, cShip, cColor, cUrgency, cDiscount, cIva, totalGastos, total, qty, printMin, kwhUsed, grams };
+}
+
+function fmt(n) {
+  if (!n || isNaN(n)) return '$0.00';
+  return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function setTxt(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function toggleRow(id, show) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.toggle('hidden-row', !show); }
+}
+
+// ==================== HISTORY ====================
+function saveQuote() {
+  calcular();
+  const c = window._calc;
+  if (!c) return;
+  const q = {
+    id: quoteCounter,
+    num: 'COT-' + String(quoteCounter).padStart(3,'0'),
+    date: new Date().toLocaleDateString('es-MX'),
+    part: document.getElementById('f-part').value || '(sin nombre)',
+    client: document.getElementById('f-client').value || '(sin cliente)',
+    grams: c.grams * c.qty,
+    printMin: c.printMin,
+    gastos: c.totalGastos,
+    total: c.total,
+    status: 'pending',
+  };
+  history.unshift(q);
+  quoteCounter++;
+  localStorage.setItem('crea3d_history3', JSON.stringify(history));
+  localStorage.setItem('crea3d_counter3', String(quoteCounter));
+  document.getElementById('r-quotenum').textContent = 'COT-' + String(quoteCounter).padStart(3,'0');
+  renderHistory();
+  updateBadge();
+  alert(`✅ ${q.num} guardada.`);
+}
+
+function loadHistory() {
+  const h = localStorage.getItem('crea3d_history3');
+  const c = localStorage.getItem('crea3d_counter3');
+  if (h) try { history = JSON.parse(h); } catch(e) {}
+  if (c) quoteCounter = parseInt(c);
+  document.getElementById('r-quotenum').textContent = 'COT-' + String(quoteCounter).padStart(3,'0');
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-container');
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-state"><div class="ico">📋</div><p>No hay cotizaciones guardadas aún.<br>Calcula y guarda una para verla aquí.</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div style="overflow-x:auto"><table class="history-table">
+    <thead><tr>
+      <th>#</th><th>Fecha</th><th>Parte</th><th>Cliente</th>
+      <th>Filamento</th><th>Tiempo imp.</th><th>Total gastos</th><th>TOTAL</th><th>Estado</th><th></th>
+    </tr></thead>
+    <tbody>${history.map(q => `<tr>
+      <td><strong>${q.num}</strong></td>
+      <td>${q.date}</td>
+      <td>${q.part}</td>
+      <td>${q.client}</td>
+      <td>${q.grams.toFixed(0)} g</td>
+      <td>${q.printMin.toFixed(0)} min</td>
+      <td>${fmt(q.gastos)}</td>
+      <td><strong style="color:var(--primary)">${fmt(q.total)}</strong></td>
+      <td>
+        <select onchange="updateStatus(${q.id}, this.value)" style="font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid #ddd">
+          <option value="pending" ${q.status==='pending'?'selected':''}>⏳ Pendiente</option>
+          <option value="sent" ${q.status==='sent'?'selected':''}>📤 Enviada</option>
+          <option value="approved" ${q.status==='approved'?'selected':''}>✅ Aprobada</option>
+          <option value="rejected" ${q.status==='rejected'?'selected':''}>❌ Rechazada</option>
+        </select>
+      </td>
+      <td><button onclick="deleteQuote(${q.id})" style="background:none;border:none;cursor:pointer;font-size:16px" title="Eliminar">🗑️</button></td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function updateStatus(id, status) {
+  const q = history.find(x => x.id === id);
+  if (q) { q.status = status; localStorage.setItem('crea3d_history3', JSON.stringify(history)); }
+}
+function deleteQuote(id) {
+  if (!confirm('¿Eliminar esta cotización?')) return;
+  history = history.filter(x => x.id !== id);
+  localStorage.setItem('crea3d_history3', JSON.stringify(history));
+  renderHistory(); updateBadge();
+}
+function clearHistory() {
+  if (!confirm('¿Eliminar todas las cotizaciones?')) return;
+  history = []; localStorage.removeItem('crea3d_history3');
+  renderHistory(); updateBadge();
+}
+function updateBadge() {
+  document.getElementById('badge-count').textContent = history.length + ' cotización' + (history.length !== 1 ? 'es' : '');
+}
+
+// ==================== UI ====================
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function resetForm() {
+  document.getElementById('f-part').value    = '';
+  document.getElementById('f-client').value  = '';
+  document.getElementById('f-days').value    = '0';
+  document.getElementById('f-hr').value      = '0';
+  document.getElementById('f-min').value     = '0';
+  document.getElementById('f-labor').value   = '0';
+  document.getElementById('f-grams').value   = '0';
+  document.getElementById('f-material').value= 'pla';
+  document.getElementById('f-matkg').value   = '250';
+  document.getElementById('f-color').value   = '0';
+  document.getElementById('f-stl').value     = '0';
+  document.getElementById('f-extras').value  = '0';
+  document.getElementById('f-qty').value     = '1';
+  document.getElementById('f-ship-type').value = '0';
+  document.getElementById('f-urgency').value   = '0';
+  document.getElementById('f-notes').value     = '';
+  document.getElementById('t-design').checked   = false;
+  document.getElementById('t-sand').checked     = false;
+  document.getElementById('t-paint').checked    = false;
+  document.getElementById('t-support').checked  = false;
+  document.getElementById('t-assembly').checked = false;
+  document.getElementById('t-discount').checked = false;
+  document.getElementById('t-iva').checked      = false;
+  document.getElementById('c-design').classList.remove('show');
+  document.getElementById('c-sand').classList.remove('show');
+  document.getElementById('c-paint').classList.remove('show');
+  document.getElementById('c-discount').classList.remove('show');
+  calcular();
+}
+
+function printQuote() { window.print(); }
+
+// ==================== START ====================
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<style>
+.btn-volver-menu {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: #2d1b69;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(45,27,105,.45);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  z-index: 9999;
+  text-decoration: none;
+  transition: all .2s;
+}
+.btn-volver-menu:hover {
+  background: #4c1d95;
+  transform: translateY(-2px);
+}
+</style>
+<a href="index.html" class="btn-volver-menu">🏠 Menú</a>
+
+</body>
+</html>

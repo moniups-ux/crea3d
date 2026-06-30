@@ -85,6 +85,7 @@
   @media(max-width:520px){
     .cards{grid-template-columns:1fr;}
   }
+  .card.cotizador3d{grid-column:1/-1}
 
   .card{
     background:rgba(255,255,255,.04);
@@ -125,12 +126,18 @@
   .card.servicios{border-color:rgba(234,88,12,.3)}
   .card.servicios:hover{border-color:rgba(251,146,60,.6);box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 30px rgba(234,88,12,.2)}
   .card.servicios .card-badge{background:rgba(234,88,12,.2);color:#fb923c;border:1px solid rgba(234,88,12,.3)}
+  .card.cotizador3d{border-color:rgba(255,107,0,.35)}
+  .card.cotizador3d:hover{border-color:rgba(255,140,60,.7);box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 30px rgba(255,107,0,.25)}
+  .card.cotizador3d .card-badge{background:rgba(255,107,0,.2);color:#ff8c3c;border:1px solid rgba(255,107,0,.3)}
 
   .card.cotizacion{border-color:rgba(29,78,216,.3)}
   .card.cotizacion:hover{border-color:rgba(96,165,250,.6);box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 30px rgba(29,78,216,.2)}
   .card.servicios{border-color:rgba(234,88,12,.3)}
   .card.servicios:hover{border-color:rgba(251,146,60,.6);box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 30px rgba(234,88,12,.2)}
   .card.servicios .card-badge{background:rgba(234,88,12,.2);color:#fb923c;border:1px solid rgba(234,88,12,.3)}
+  .card.cotizador3d{border-color:rgba(255,107,0,.35)}
+  .card.cotizador3d:hover{border-color:rgba(255,140,60,.7);box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 30px rgba(255,107,0,.25)}
+  .card.cotizador3d .card-badge{background:rgba(255,107,0,.2);color:#ff8c3c;border:1px solid rgba(255,107,0,.3)}
 
   .card-icon{
     font-size:48px;
@@ -187,6 +194,15 @@
 
   <div class="cards">
 
+    <!-- COTIZADOR IMPRESIÓN 3D -->
+    <a href="cotizador-3d.html" class="card cotizador3d">
+      <span class="card-arrow">↗</span>
+      <span class="card-icon">🖨️</span>
+      <div class="card-title">Cotizador Impresión 3D</div>
+      <div class="card-desc">Calcula precios de impresión 3D según material, tiempo y peso de la pieza.</div>
+      <span class="card-badge">🖨️ CALCULA PRECIOS</span>
+    </a>
+
     <!-- PIZARRA DE PEDIDOS -->
     <a href="pizarra.html" class="card pizarra">
       <span class="card-arrow">↗</span>
@@ -196,7 +212,7 @@
       <span class="card-badge">☁️ SINCRONIZADO EN LA NUBE</span>
     </a>
 
-    <!-- COTIZADOR -->
+    <!-- COTIZACIONES -->
     <a href="cotizacion.html" class="card cotizacion">
       <span class="card-arrow">↗</span>
       <span class="card-icon">🧾</span>
