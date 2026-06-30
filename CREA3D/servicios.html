@@ -5815,37 +5815,22 @@ renderDashboard();
 </script>
 
 <script>
-// Inicializar mostrando página servicios
-document.addEventListener('DOMContentLoaded', function() {
-  // Activar página servicios
-  const ps = document.getElementById('page-servicios');
-  if(ps) ps.classList.add('active-page');
-  
-  // Llamar init del sistema
-  if(typeof loadData === 'function') loadData();
-  else if(typeof init === 'function') init();
-  
-  renderServicios && renderServicios();
-});
+// Override renderDashboard to do nothing (we don't show dashboard)
+window.renderDashboard = function() {};
 
+// Switch entre servicios y mantenimiento
 function switchSection(sec) {
   document.getElementById('wrap-servicios').style.display = sec === 'servicios' ? 'block' : 'none';
   document.getElementById('wrap-mantenimiento').style.display = sec === 'mantenimiento' ? 'block' : 'none';
   document.getElementById('tab-servicios').classList.toggle('active', sec === 'servicios');
   document.getElementById('tab-mantenimiento').classList.toggle('active', sec === 'mantenimiento');
-  
-  // Render correspondiente
-  if(sec === 'servicios' && typeof renderServicios === 'function') renderServicios();
-  if(sec === 'mantenimiento' && typeof renderMantenimiento === 'function') renderMantenimiento();
+  if(sec === 'servicios') renderServicios();
+  if(sec === 'mantenimiento') renderMantenimiento();
 }
 
-// Mostrar página cuando el sistema la llama
-const _origShowPage = window.showPage;
-window.showPage = function(page, el) {
-  if(page === 'servicios' || page === 'mantenimiento') {
-    switchSection(page);
-  }
-};
+// Al cargar: load() ya se ejecutó en el script del inventario
+// Solo renderizamos servicios que es la tab activa
+renderServicios();
 </script>
 
 </body>
