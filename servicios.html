@@ -3054,5 +3054,185 @@ renderServicios();
   }).catch(function(e){console.error(e);showInd('⚠️ Sin conexión','#dc2626');});
 })();
 </script>
+
+<script>
+const MN_PDF = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const fmtD_PDF = d => { if(!d) return '—'; const [y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
+const fmt_PDF = n => n ? '$'+Math.round(n).toLocaleString('es-MX') : '—';
+
+function _pdfHeader(doc, titulo, hoy, W) {
+  doc.setFillColor(45,27,105); doc.rect(0,0,W,22,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('CREA3D CANCÚN — '+titulo, 14, 10);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Fecha: '+hoy, W-14, 10, {align:'right'});
+}
+
+function _pdfStats(doc, stats, W) {
+  const sw = (W-28)/stats.length;
+  stats.forEach((s,i) => {
+    const x = 14+i*sw;
+    doc.setFillColor(240,235,255); doc.roundedRect(x,26,sw-3,14,2,2,'F');
+    doc.setTextColor(124,58,237); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(s[0].toUpperCase(), x+3, 32);
+    doc.setTextColor(26,26,46); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(String(s[1]), x+3, 39);
+  });
+}
+
+function _pdfTableHeader(doc, cols, y, W) {
+  doc.setFillColor(45,27,105); doc.rect(14,y,W-28,8,'F');
+  doc.setTextColor(196,181,253); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  let cx=14; cols.forEach(c => { doc.text(c.h, cx+1, y+5.5); cx+=c.w; });
+}
+
+function _pdfFooter(doc, hoy, W, H) {
+  doc.setFillColor(45,27,105); doc.rect(0,H-8,W,8,'F');
+  doc.setTextColor(196,181,253); doc.setFontSize(7);
+  doc.text('Crea3D Cancún — Sistema de Gestión', 14, H-3);
+  doc.text(hoy, W-14, H-3, {align:'right'});
+}
+
+function exportServiciosPDF(scope) {
+  if(!window.jspdf) { alert('Cargando librería PDF, intenta en un momento...'); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  const hoy = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const selMes = document.getElementById('serv-filtro-mes')?.value || '';
+  const selAnio = document.getElementById('serv-filtro-anio')?.value || String(new Date().getFullYear());
+
+  let data = [...(DB.servicios||[])];
+  let titulo = 'Reporte General de Servicios';
+  if(scope==='mes') {
+    const mes = selMes || String(new Date().getMonth()+1);
+    data = data.filter(s => {
+      if(!s.fecha) return false;
+      const [y,m] = s.fecha.split('-');
+      return m===mes.padStart(2,'0') && y===selAnio;
+    });
+    titulo = 'Servicios — '+MN_PDF[parseInt(mes)]+' '+selAnio;
+  }
+
+  _pdfHeader(doc, titulo, hoy, W);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(196,181,253);
+  doc.text(data.length+' registros', W-14, 16, {align:'right'});
+
+  const comp = data.filter(s=>s.estado==='Completado');
+  const totG = comp.reduce((a,s)=>a+(s.precioTotal||0),0);
+  const porC = data.filter(s=>s.estado!=='Completado').reduce((a,s)=>a+(s.precio||0),0);
+  _pdfStats(doc,[
+    ['Total',data.length],['Completados',comp.length],
+    ['Ganancia',fmt_PDF(totG)],['Por Cobrar',fmt_PDF(porC)]
+  ], W);
+
+  const cols=[
+    {h:'ID',w:14},{h:'CLIENTE',w:30},{h:'DESCRIPCION',w:48},{h:'TIPO SERVICIO',w:24},
+    {h:'PIEZA',w:20},{h:'MATERIAL',w:18},{h:'ANTICIPO',w:20},
+    {h:'TOTAL',w:20},{h:'SALDO',w:20},{h:'ESTADO',w:22},{h:'F.ENTREGA',w:22}
+  ];
+  let y=46;
+  _pdfTableHeader(doc, cols, y, W); y+=8;
+
+  data.forEach((s,i) => {
+    if(y>H-20){doc.addPage();y=10;}
+    doc.setFillColor(i%2===0?255:248,i%2===0?255:247,i%2===0?255:255);
+    doc.rect(14,y,W-28,9,'F');
+    doc.setDrawColor(220,215,240); doc.rect(14,y,W-28,9,'S');
+    const vals=[
+      s.id||'—', s.cliente||'—',
+      (s.descripcion||'—').substring(0,32),
+      s.tipoServicio||'—', s.tipoPieza||'—', s.material||'—',
+      fmt_PDF(s.anticipo), fmt_PDF(s.precioTotal), fmt_PDF(s.precio),
+      s.estado||'—', fmtD_PDF(s.fechaEntrega)
+    ];
+    doc.setFontSize(7); doc.setFont('helvetica','normal');
+    let cx=14;
+    vals.forEach((v,vi) => {
+      if(vi===9){
+        doc.setTextColor(s.estado==='Completado'?[5,150,105]:s.estado==='Pendiente'?[217,119,6]:[26,26,46]);
+      } else doc.setTextColor(26,26,46);
+      doc.text(doc.splitTextToSize(String(v),cols[vi].w-2)[0]||'', cx+1, y+6);
+      cx+=cols[vi].w;
+    });
+    y+=9;
+  });
+
+  _pdfFooter(doc, hoy, W, H);
+  doc.save('servicios-'+scope+'-'+hoy.replace(/\//g,'-')+'.pdf');
+}
+
+function exportMantPDF(scope) {
+  if(!window.jspdf) { alert('Cargando librería PDF, intenta en un momento...'); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  const hoy = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const selMes = document.getElementById('mant-filtro-mes')?.value || '';
+  const selAnio = document.getElementById('mant-filtro-anio')?.value || String(new Date().getFullYear());
+
+  let data = [...(DB.mantenimiento||[])];
+  let titulo = 'Reporte General de Mantenimiento';
+  if(scope==='mes') {
+    const mes = selMes || String(new Date().getMonth()+1);
+    data = data.filter(m => {
+      if(!m.fecha) return false;
+      const [y,mo] = m.fecha.split('-');
+      return mo===mes.padStart(2,'0') && y===selAnio;
+    });
+    titulo = 'Mantenimiento — '+MN_PDF[parseInt(mes)]+' '+selAnio;
+  }
+
+  _pdfHeader(doc, titulo, hoy, W);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(196,181,253);
+  doc.text(data.length+' registros', W-14, 16, {align:'right'});
+
+  const ent = data.filter(m=>m.estado==='Entregado');
+  const totM = ent.reduce((a,m)=>a+(parseFloat(m.costoTotal)||0),0);
+  const proc = data.filter(m=>m.estado!=='Entregado');
+  _pdfStats(doc,[
+    ['Total',data.length],['Entregados',ent.length],
+    ['Generado',fmt_PDF(totM)],['En Proceso',proc.length]
+  ], W);
+
+  const cols=[
+    {h:'FOLIO',w:16},{h:'FECHA',w:22},{h:'CLIENTE',w:30},{h:'TEL',w:24},
+    {h:'MARCA/MODELO',w:30},{h:'MOTIVO',w:32},{h:'COSTO',w:22},
+    {h:'ESTADO',w:22},{h:'F.ENTREGA',w:24}
+  ];
+  let y=46;
+  _pdfTableHeader(doc, cols, y, W); y+=8;
+
+  data.forEach((m,i) => {
+    if(y>H-20){doc.addPage();y=10;}
+    doc.setFillColor(i%2===0?255:248,i%2===0?255:247,i%2===0?255:255);
+    doc.rect(14,y,W-28,9,'F');
+    doc.setDrawColor(220,215,240); doc.rect(14,y,W-28,9,'S');
+    const vals=[
+      m.id||'—', fmtD_PDF(m.fecha), m.cliente||'—', m.telefono||'—',
+      ((m.marca||'')+(m.modelo?' '+m.modelo:'')).substring(0,18)||'—',
+      (m.motivos||[]).join(', ').substring(0,22)||'—',
+      m.costoTotal?fmt_PDF(parseFloat(m.costoTotal)):'—',
+      m.estado||'—', fmtD_PDF(m.fechaEntrega)
+    ];
+    doc.setFontSize(7); doc.setFont('helvetica','normal');
+    let cx=14;
+    vals.forEach((v,vi) => {
+      if(vi===7){
+        doc.setTextColor(m.estado==='Entregado'?[5,150,105]:m.estado==='Listo'?[3,105,161]:[217,119,6]);
+      } else doc.setTextColor(26,26,46);
+      doc.text(doc.splitTextToSize(String(v),cols[vi].w-2)[0]||'', cx+1, y+6);
+      cx+=cols[vi].w;
+    });
+    y+=9;
+  });
+
+  _pdfFooter(doc, hoy, W, H);
+  doc.save('mantenimiento-'+scope+'-'+hoy.replace(/\//g,'-')+'.pdf');
+}
+</script>
+
 </body>
 </html>
