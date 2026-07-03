@@ -3196,5 +3196,72 @@ function exportMantPDF(scope) {
 }
 </script>
 
+
+<script>
+// ── Firebase Sync ──────────────────────────────────────────────
+(function(){
+  var ind = document.createElement('div');
+  ind.style.cssText = 'position:fixed;bottom:70px;right:16px;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .4s;box-shadow:0 2px 8px rgba(0,0,0,.3);pointer-events:none';
+  document.body.appendChild(ind);
+
+  function showInd(msg, c){
+    ind.textContent=msg;
+    ind.style.background=c||'#059669';
+    ind.style.color='#fff';
+    ind.style.opacity='1';
+    clearTimeout(ind._t);
+    ind._t=setTimeout(function(){ind.style.opacity='0';},3000);
+  }
+
+  // Override save() to also save to Firebase
+  var _origSave = window.save;
+  window.save = function(){
+    if(_origSave) _origSave();
+    if(typeof DB==='undefined') return;
+    _fbRef.set({
+      servicios: DB.servicios||[],
+      mantenimiento: DB.mantenimiento||[],
+      ts: new Date().toISOString()
+    }).then(function(){ showInd('☁️ Guardado'); })
+      .catch(function(e){ console.error(e); showInd('⚠️ Error al guardar','#dc2626'); });
+  };
+
+  // Load from Firebase on start
+  showInd('⏳ Sincronizando...','#7c3aed');
+  _fbRef.get().then(function(snap){
+    if(snap.exists){
+      var d = snap.data();
+      if(d && typeof DB !== 'undefined'){
+        // Always use Firebase data if it has more records
+        if(d.servicios && d.servicios.length > (DB.servicios||[]).length){
+          DB.servicios = d.servicios;
+        }
+        if(d.mantenimiento && d.mantenimiento.length > (DB.mantenimiento||[]).length){
+          DB.mantenimiento = d.mantenimiento;
+        }
+        // Also force load if local is empty
+        if((DB.servicios||[]).length === 0 && d.servicios && d.servicios.length > 0){
+          DB.servicios = d.servicios;
+        }
+        if((DB.mantenimiento||[]).length === 0 && d.mantenimiento && d.mantenimiento.length > 0){
+          DB.mantenimiento = d.mantenimiento;
+        }
+        try{ localStorage.setItem('crea3d_db', JSON.stringify(DB)); }catch(e){}
+        showInd('☁️ Sincronizado (' + (DB.servicios||[]).length + ' servicios, ' + (DB.mantenimiento||[]).length + ' notas)');
+        setTimeout(function(){
+          renderServicios();
+          renderMantenimiento();
+        }, 100);
+      }
+    } else {
+      showInd('☁️ Conectado');
+    }
+  }).catch(function(e){
+    console.error('Firebase load error:', e);
+    showInd('⚠️ Sin conexión a Firebase','#dc2626');
+  });
+})();
+</script>
+
 </body>
 </html>
