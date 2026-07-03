@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Gastos - Crea3D Cancun</title>
 
+<!-- Firebase PRIMERO antes que todo -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// Inicializar Firebase inmediatamente
+var _fbCfg={apiKey:"AIzaSyDE7NjpVdfL3uSfynv4RzDyGYT9jtY6kZ8",authDomain:"crea3d-pedidos.firebaseapp.com",projectId:"crea3d-pedidos",storageBucket:"crea3d-pedidos.firebasestorage.app",messagingSenderId:"1018801484372",appId:"1:1018801484372:web:1ba0cd28cbbba6f605b3c1"};
+if(!firebase.apps.length)firebase.initializeApp(_fbCfg);
+var _fdb=firebase.firestore();
+var _fbRef=_fdb.doc('gastos/control');
+</script>
+
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -331,6 +343,8 @@
 
 
 <script>
+// ── Script original ──────────────────────────────────────────
+
 const APP_TITLE='Control de Gastos';
 const MAT_CAT='Filamento/Resina';
 const DIS_CAT='Diseñadores';
@@ -692,37 +706,39 @@ function exportPDF(scope){
 
 onCatChange();
 render();
-</script>
 
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script>
-(function(){
-  var cfg={apiKey:"AIzaSyDE7NjpVdfL3uSfynv4RzDyGYT9jtY6kZ8",authDomain:"crea3d-pedidos.firebaseapp.com",projectId:"crea3d-pedidos",storageBucket:"crea3d-pedidos.firebasestorage.app",messagingSenderId:"1018801484372",appId:"1:1018801484372:web:1ba0cd28cbbba6f605b3c1"};
-  if(!firebase.apps.length)firebase.initializeApp(cfg);
-  var fdb=firebase.firestore();
-  var REF=fdb.doc('gastos/control');
-  var ind=document.getElementById('fb-ind');
-  function show(msg,c){ind.textContent=msg;ind.style.background=c||'#059669';ind.style.color='#fff';ind.style.opacity='1';clearTimeout(ind._t);ind._t=setTimeout(function(){ind.style.opacity='0'},3000);}
-  var _sv=window.sv;
-  window.sv=function(){
-    if(_sv)_sv();
-    REF.set({EX:EX,ts:new Date().toISOString()}).then(function(){show('Guardado en la nube');}).catch(function(e){console.error(e);show('Error al guardar','#dc2626');});
-  };
-  window.addEventListener('load',function(){
-    show('Sincronizando...','#7c3aed');
-    REF.get().then(function(snap){
-      if(snap.exists){
-        var d=snap.data();
-        if(d&&d.EX&&Object.keys(d.EX).length>0){
-          EX=d.EX;localStorage.setItem('gev15',JSON.stringify(EX));show('Sincronizado');
-        } else show('Conectado');
-        if(typeof goToCurrentMonth==='function')goToCurrentMonth();
-      } else show('Conectado');
-    }).catch(function(){show('Sin conexion','#dc2626');});
-  });
-})();
+// ── Firebase sync ────────────────────────────────────────────
+var ind=document.getElementById('fb-ind');
+function _showFB(msg,c){ind.textContent=msg;ind.style.background=c||'#059669';ind.style.color='#fff';ind.style.opacity='1';clearTimeout(ind._t);ind._t=setTimeout(function(){ind.style.opacity='0'},3000);}
+
+// Override sv() para guardar en Firebase
+var _origSv=window.sv;
+window.sv=function(){
+  if(_origSv)_origSv();
+  _fbRef.set({EX:EX,ts:new Date().toISOString()})
+    .then(function(){_showFB('Guardado en la nube');})
+    .catch(function(e){console.error('FB save:',e);_showFB('Error al guardar','#dc2626');});
+};
+
+// Cargar desde Firebase al iniciar
+_showFB('Sincronizando...','#7c3aed');
+_fbRef.get().then(function(snap){
+  if(snap.exists){
+    var d=snap.data();
+    if(d&&d.EX&&Object.keys(d.EX).length>0){
+      EX=d.EX;
+      localStorage.setItem('gev15',JSON.stringify(EX));
+      _showFB('Sincronizado');
+    } else { _showFB('Conectado'); }
+  } else { _showFB('Conectado'); }
+  // Renderizar y limpiar estado de edicion
+  if(typeof goToCurrentMonth==='function')goToCurrentMonth();
+  if(typeof cancelEdit==='function')cancelEdit();
+}).catch(function(e){
+  console.error('FB load:',e);
+  _showFB('Sin conexion a la nube','#dc2626');
+});
 </script>
 
 </body>
