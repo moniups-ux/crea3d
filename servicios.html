@@ -812,6 +812,10 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
           <input type="date" id="serv-fecha">
         </div>
         <div class="form-group">
+          <label>📦 Fecha de Entrega</label>
+          <input type="date" id="serv-fecha-entrega">
+        </div>
+        <div class="form-group full">
           <label>Estado</label>
           <select id="serv-estado">
             <option>Activo</option>
@@ -1198,15 +1202,26 @@ function refreshPage(name) {
 
 // ===================== MODALS =====================
 function openModal(id) {
-  // Al abrir modal de servicio, mostrar campos de costo y resetear form
+  // Al abrir modal de servicio
   if(id === 'modal-servicio') {
-    const dg = document.getElementById('serv-costo-diseno-group');
-    const ig = document.getElementById('serv-costo-impresion-group');
-    if(dg) dg.style.display = '';
-    if(ig) ig.style.display = '';
-    // Seleccionar Diseño+Impresión por defecto
-    const ambos = document.getElementById('serv-tipo-ambos');
-    if(ambos) { ambos.checked = true; updateServTipo(); }
+    // Si es nuevo registro (edit-idx = -1), resetear tipo de servicio
+    const editIdx = document.getElementById('serv-edit-idx')?.value;
+    if(editIdx === '-1' || editIdx === undefined) {
+      // Seleccionar Diseño+Impresión por defecto
+      const ambos = document.getElementById('serv-tipo-ambos');
+      if(ambos) { ambos.checked = true; }
+      // Limpiar fecha entrega
+      const fe = document.getElementById('serv-fecha-entrega');
+      if(fe) fe.value = '';
+    }
+    // Siempre mostrar campos de costo y actualizar UI
+    setTimeout(function(){
+      if(typeof updateServTipo === 'function') updateServTipo();
+      const dg = document.getElementById('serv-costo-diseno-group');
+      const ig = document.getElementById('serv-costo-impresion-group');
+      if(dg) dg.style.display = '';
+      if(ig) ig.style.display = '';
+    }, 50);
   }
   if (id === 'modal-movimiento') populateMovimientoSelect();
   if (id === 'modal-venta') populateVentaSelect();
@@ -2169,6 +2184,7 @@ function saveServicio() {
     cliente,
     telefono:     document.getElementById('serv-telefono').value,
     fecha:        document.getElementById('serv-fecha').value,
+    fechaEntrega: (document.getElementById('serv-fecha-entrega')?.value || ''),
     tipoServicio,
     tipoPieza,
     descripcion:  document.getElementById('serv-desc').value,
@@ -2190,6 +2206,8 @@ function editServicio(i) {
   document.getElementById('serv-cliente').value    = s.cliente||'';
   document.getElementById('serv-telefono').value   = s.telefono||'';
   document.getElementById('serv-fecha').value      = s.fecha||'';
+  const _fe2 = document.getElementById('serv-fecha-entrega');
+  if(_fe2) _fe2.value = s.fechaEntrega||'';
   document.getElementById('serv-desc').value       = s.descripcion||'';
   document.getElementById('serv-material').value   = s.material||'';
   document.getElementById('serv-tiempo').value     = s.tiempo||0;
