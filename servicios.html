@@ -844,7 +844,14 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
           </div>
           <div class="form-group">
             <label>Tipo de Material</label>
-            <input type="text" id="serv-material" placeholder="Ej: PLA, Resina, ABS">
+            <select id="serv-material">
+            <option value="">-- Seleccionar --</option>
+            <option value="PLA">PLA</option>
+            <option value="PETG">PETG</option>
+            <option value="ABS">ABS</option>
+            <option value="ASA">ASA</option>
+            <option value="Resina">Resina</option>
+          </select>
           </div>
           <div class="form-group">
             <label>Tiempo Impresión (h)</label>
@@ -1172,6 +1179,16 @@ function refreshPage(name) {
 
 // ===================== MODALS =====================
 function openModal(id) {
+  // Al abrir modal de servicio, mostrar campos de costo y resetear form
+  if(id === 'modal-servicio') {
+    const dg = document.getElementById('serv-costo-diseno-group');
+    const ig = document.getElementById('serv-costo-impresion-group');
+    if(dg) dg.style.display = '';
+    if(ig) ig.style.display = '';
+    // Seleccionar Diseño+Impresión por defecto
+    const ambos = document.getElementById('serv-tipo-ambos');
+    if(ambos) { ambos.checked = true; updateServTipo(); }
+  }
   if (id === 'modal-movimiento') populateMovimientoSelect();
   if (id === 'modal-venta') populateVentaSelect();
   document.getElementById(id).classList.add('open');
@@ -2071,8 +2088,8 @@ function renderServicios() {
       <td style="color:var(--muted)">${s.tiempo||0}h</td>
       <td style="color:var(--warning)">$${fmt(s.anticipo)}</td>
       <td>
-        <div style="font-size:11px;color:var(--success)">Total: $${fmt(s.precioTotal||((s.costoDiseno||0)+(s.costoImpresion||0)))}</div>
-        <div style="font-size:12px;color:var(--accent);font-weight:700">Saldo: $${fmt(s.precio)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--success)">Total: $${fmt(s.precioTotal||((s.costoDiseno||0)+(s.costoImpresion||0)))}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent)">Saldo: $${fmt(s.precio)}</div>
       </td>
       <td>${imgHtml}</td>
       <td><span class="badge badge-${stateCls}">${s.estado}</span></td>
