@@ -192,6 +192,8 @@ body, .preview-box, .preview-box * { color: #111 !important; background: white !
 .preview-company, .preview-table, .total-row { page-break-inside: avoid; }
 
   </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app">
@@ -812,8 +814,6 @@ document.addEventListener('DOMContentLoaded',init);
 
 
 <!-- FIREBASE - GUARDADO EN LA NUBE -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
   const firebaseConfig = {
