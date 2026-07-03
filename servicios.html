@@ -2204,19 +2204,37 @@ function renderServicios() {
   var _selAnio=parseInt(document.getElementById('serv-filtro-anio')?.value||'0')||_now.getFullYear();
   var _comp=DB.servicios.filter(function(s){return s.estado==='Completado';});
   var _totG=_comp.reduce(function(a,s){return a+(s.precioTotal||0);},0);
+  // Servicios completados del mes
   var _mesC=_comp.filter(function(s){
     if(!s.fecha)return false;
     var p=s.fecha.split('-');
     return parseInt(p[1])===_selMes && parseInt(p[0])===_selAnio;
   });
   var _mesG=_mesC.reduce(function(a,s){return a+(s.precioTotal||0);},0);
+
+  // Sumar anticipos del mes de servicios NO completados
+  var _pendMes=DB.servicios.filter(function(s){
+    if(s.estado==='Completado') return false;
+    if(!s.fecha) return false;
+    var p=s.fecha.split('-');
+    return parseInt(p[1])===_selMes && parseInt(p[0])===_selAnio;
+  });
+  var _anticiposMes=_pendMes.reduce(function(a,s){return a+(parseFloat(s.anticipo)||0);},0);
+  var _mesGTotal=_mesG+_anticiposMes; // completados + anticipos del mes
+
   var _pend=DB.servicios.filter(function(s){return s.estado!=='Completado';});
   var _porC=_pend.reduce(function(a,s){return a+(s.precio||0);},0);
   var _et=document.getElementById('serv-stat-total');
   var _em=document.getElementById('serv-stat-mes');
   var _ep=document.getElementById('serv-stat-pendiente');
   if(_et){_et.textContent='$'+Math.round(_totG).toLocaleString('es-MX');document.getElementById('serv-stat-total-sub').textContent=_comp.length+' completado'+(_comp.length!==1?'s':'');}
-  if(_em){_em.textContent='$'+Math.round(_mesG).toLocaleString('es-MX');document.getElementById('serv-stat-mes-label').textContent='Ganancia — '+_mn[_selMes]+' '+_selAnio;document.getElementById('serv-stat-mes-sub').textContent=_mesC.length+' completado'+(_mesC.length!==1?'s':'');}
+  if(_em){
+    _em.textContent='$'+Math.round(_mesGTotal).toLocaleString('es-MX');
+    document.getElementById('serv-stat-mes-label').textContent='Cobrado — '+_mn[_selMes]+' '+_selAnio;
+    var _subText=_mesC.length+' completado'+(_mesC.length!==1?'s':'');
+    if(_anticiposMes>0) _subText+=' + $'+Math.round(_anticiposMes).toLocaleString('es-MX')+' anticipos';
+    document.getElementById('serv-stat-mes-sub').textContent=_subText;
+  }
   if(_ep){_ep.textContent='$'+Math.round(_porC).toLocaleString('es-MX');document.getElementById('serv-stat-pendiente-sub').textContent=_pend.length+' activo'+(_pend.length!==1?'s':'');}
 
   const tbody = document.getElementById('tbody-servicios');
@@ -2785,313 +2803,257 @@ function deleteMantenimiento(i) {
 // ===================== PDF NOTA DE RECEPCIÓN =====================
 function exportNotaPDF(i) {
   const m = DB.mantenimiento[i];
+  if(!window.jspdf){ alert('Cargando PDF...'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();
-  let y = 10;
+  const ph = doc.internal.pageSize.getHeight();
+  let y = 0;
 
-  const colors = {
-    dark: [10, 10, 15],
-    orange: [255, 107, 53],
-    purple: [124, 58, 237],
-    cyan: [6, 182, 212],
-    light: [240, 240, 255],
-    muted: [136, 136, 170],
-    surface: [26, 26, 40],
-    border: [42, 42, 64],
-    white: [255, 255, 255],
-    success: [16, 185, 129],
-    warning: [245, 158, 11],
-    danger: [239, 68, 68],
+  // ── Paleta blanco/morado del sistema ──
+  const C = {
+    purple:    [45, 27, 105],    // header oscuro
+    purpleMid: [76, 29, 149],    // secciones
+    purpleLight:[124, 58, 237],  // acentos
+    lavender:  [196, 181, 253],  // labels
+    white:     [255, 255, 255],
+    offWhite:  [240, 238, 255],
+    gray:      [156, 163, 175],
+    darkText:  [26, 26, 46],
+    rowAlt:    [245, 243, 255],  // fila alternada
+    success:   [5, 150, 105],
+    danger:    [220, 38, 38],
+    border:    [224, 216, 255],
   };
 
-  // ── HEADER ──
-  doc.setFillColor(...colors.dark);
-  doc.rect(0, 0, pw, 38, 'F');
-  doc.setFillColor(...colors.orange);
-  doc.rect(0, 0, 5, 38, 'F');
+  // ── HEADER ──────────────────────────────────────────────
+  doc.setFillColor(...C.purple);
+  doc.rect(0, 0, pw, 35, 'F');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(...colors.orange);
-  doc.text('Crea3D', 13, 14);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...colors.muted);
-  doc.text('Cancún', 13, 19);
-  doc.text('Sm 221 MZA 22 lote 13, calle 86, Cancún Q. Roo', 13, 23);
-  doc.text('(+52) 9984 011314  |  www.crea3dcancun.com', 13, 27);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(...colors.light);
-  doc.text('NOTA DE RECEPCIÓN', pw - 12, 16, { align: 'right' });
-  doc.setFontSize(9);
-  doc.setTextColor(...colors.orange);
-  doc.text(`Folio: ${m.id}`, pw - 12, 22, { align: 'right' });
-  doc.setTextColor(...colors.muted);
-  doc.setFont('helvetica', 'normal');
+  // Logo / empresa
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.setTextColor(...C.white);
+  doc.text('Crea3D', 12, 16);
+  doc.setFont('helvetica','normal');
   doc.setFontSize(8);
-  doc.text(`Fecha: ${m.fecha||''}  Hora: ${m.hora||''}`, pw - 12, 27, { align: 'right' });
+  doc.setTextColor(...C.lavender);
+  doc.text('Cancún  ·  Sm 221 MZA 22 lote 13, calle 86', 12, 22);
+  doc.text('(+52) 9984 011314  ·  www.crea3dcancun.com', 12, 27);
 
-  y = 44;
+  // Título derecha
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...C.white);
+  doc.text('NOTA DE RECEPCIÓN', pw-12, 14, {align:'right'});
+  doc.setFontSize(10);
+  doc.setTextColor(...C.lavender);
+  doc.text('Folio: ' + (m.id||'—'), pw-12, 21, {align:'right'});
+  doc.setFontSize(8);
+  doc.setFont('helvetica','normal');
+  doc.text('Fecha: '+(m.fecha||'—')+'   Hora: '+(m.hora||'—'), pw-12, 27, {align:'right'});
+  if(m.fechaEntrega) {
+    doc.setTextColor(...C.offWhite);
+    doc.text('Entrega estimada: '+m.fechaEntrega, pw-12, 32, {align:'right'});
+  }
+  y = 40;
 
-  // Helper: section title
-  const sectionTitle = (title, color) => {
-    const sc = color || colors.surface; doc.setFillColor(sc[0], sc[1], sc[2]);
-    doc.roundedRect(10, y, pw - 20, 7, 1, 1, 'F');
-    doc.setFont('helvetica', 'bold');
+  // ── Helpers ─────────────────────────────────────────────
+  const checkPage = (need=15) => {
+    if(y + need > ph - 15) {
+      doc.addPage();
+      doc.setFillColor(...C.purple);
+      doc.rect(0,0,pw,10,'F');
+      doc.setTextColor(...C.lavender);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.text('Crea3D Cancún  ·  Nota de Recepción: '+(m.id||''), pw/2, 7, {align:'center'});
+      y = 16;
+    }
+  };
+
+  const secTitle = (title) => {
+    checkPage(14);
+    doc.setFillColor(...C.purpleMid);
+    doc.roundedRect(10, y, pw-20, 8, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold');
     doc.setFontSize(8);
-    doc.setTextColor(...colors.orange);
-    doc.text(title.toUpperCase(), 14, y + 4.8);
-    y += 10;
+    doc.setTextColor(...C.white);
+    doc.text(title.toUpperCase(), 15, y+5.5);
+    y += 12;
   };
 
-  // Helper: row label + value
-  const row = (label, value, x1 = 12, x2 = 55, maxW = 140) => {
-    doc.setFont('helvetica', 'bold');
+  const field = (label, value, x1=13, x2=52, maxW=135) => {
+    checkPage(7);
+    doc.setFont('helvetica','bold');
     doc.setFontSize(7.5);
-    doc.setTextColor(...colors.muted);
-    doc.text(label + ':', x1, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...colors.light);
-    const lines = doc.splitTextToSize(value || '—', maxW);
+    doc.setTextColor(...C.purpleLight);
+    doc.text(label+':', x1, y);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(...C.darkText);
+    const lines = doc.splitTextToSize(value||'—', maxW);
     doc.text(lines, x2, y);
-    y += lines.length * 4.5 + 1;
+    y += lines.length * 5;
   };
 
-  const twoRow = (l1, v1, l2, v2) => {
-    const savedY = y;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...colors.muted);
-    doc.text(l1 + ':', 12, y);
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(...colors.light);
-    doc.text(v1 || '—', 45, y);
-    doc.setFont('helvetica', 'bold'); doc.setTextColor(...colors.muted);
-    doc.text(l2 + ':', pw / 2 + 4, y);
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(...colors.light);
-    doc.text(v2 || '—', pw / 2 + 28, y);
+  const twoField = (l1, v1, l2, v2) => {
+    checkPage(7);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.purpleLight);
+    doc.text(l1+':', 13, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...C.darkText);
+    doc.text(v1||'—', 45, y);
+    doc.setFont('helvetica','bold'); doc.setTextColor(...C.purpleLight);
+    doc.text(l2+':', pw/2+5, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...C.darkText);
+    doc.text(v2||'—', pw/2+28, y);
     y += 5.5;
   };
 
-  // ── CLIENTE ──
-  sectionTitle('Datos del Cliente');
-  row('Nombre', m.cliente);
-  twoRow('Teléfono', m.telefono, 'Correo', m.correo);
-  row('Dirección', m.direccion);
-  y += 2;
-
-  // ── IMPRESORA ──
-  sectionTitle('Datos de la Impresora');
-  twoRow('Marca', m.marca, 'Modelo', m.modelo);
-  twoRow('Tecnología', m.tecnologia, 'No. de Serie', m.serie);
-
-  // Motivo de ingreso checkboxes
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...colors.muted);
-  doc.text('Motivo de Ingreso:', 12, y);
-  ['Diagnóstico','Mantenimiento','Reparación'].forEach((mot, mi) => {
-    const checked = (m.motivos||[]).includes(mot);
-    const bx = 50 + mi * 42;
-    const mc = checked ? colors.orange : colors.surface; doc.setFillColor(mc[0], mc[1], mc[2]);
-    doc.roundedRect(bx, y - 3.5, 3.5, 3.5, 0.5, 0.5, 'F');
-    doc.setDrawColor(...colors.border);
-    doc.roundedRect(bx, y - 3.5, 3.5, 3.5, 0.5, 0.5, 'S');
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(...colors.light);
-    doc.text(mot, bx + 5, y);
-  });
-  y += 6;
-
-  // ── PROBLEMA ──
-  sectionTitle('Problema Reportado por el Cliente');
-  doc.setFillColor(...colors.surface);
-  doc.roundedRect(10, y, pw - 20, 18, 1, 1, 'F');
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...colors.light);
-  const probLines = doc.splitTextToSize(m.problema || 'Sin descripción', pw - 28);
-  doc.text(probLines.slice(0, 4), 14, y + 5);
-  y += 22;
-
-  // ── ESTADO FÍSICO ──
-  sectionTitle('Estado Físico al Recibir');
-  // Table header
-  doc.setFillColor(...colors.surface);
-  doc.rect(10, y, pw - 20, 5.5, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...colors.muted);
-  doc.text('CONCEPTO', 14, y + 3.8);
-  doc.text('SÍ', pw / 2 - 20, y + 3.8, { align: 'center' });
-  doc.text('NO', pw / 2 - 5, y + 3.8, { align: 'center' });
-  doc.text('OBSERVACIONES', pw / 2 + 4, y + 3.8);
-  y += 5.5;
-
-  (m.estadoFisico || []).forEach((ef, ei) => {
-    if (ei % 2 === 0) { doc.setFillColor(22, 22, 34); doc.rect(10, y, pw - 20, 5.5, 'F'); }
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...colors.light);
-    doc.text(ef.concepto, 14, y + 3.8);
-    // SI checkbox
-    const siC = ef.si ? colors.success : colors.surface; doc.setFillColor(siC[0], siC[1], siC[2]);
-    doc.roundedRect(pw/2 - 22.5, y + 0.5, 4, 4, 0.5, 0.5, 'F');
-    doc.setDrawColor(...colors.border); doc.roundedRect(pw/2 - 22.5, y + 0.5, 4, 4, 0.5, 0.5, 'S');
-    // NO checkbox
-    const noC = ef.no ? colors.danger : colors.surface; doc.setFillColor(noC[0], noC[1], noC[2]);
-    doc.roundedRect(pw/2 - 7.5, y + 0.5, 4, 4, 0.5, 0.5, 'F');
-    doc.setDrawColor(...colors.border); doc.roundedRect(pw/2 - 7.5, y + 0.5, 4, 4, 0.5, 0.5, 'S');
-    doc.setTextColor(...colors.muted);
-    doc.text(ef.obs || '', pw/2 + 4, y + 3.8);
-    y += 5.5;
-    if (y > 260) { doc.addPage(); y = 15; }
-  });
+  // ── DATOS CLIENTE ────────────────────────────────────────
+  secTitle('Datos del Cliente');
+  field('Nombre', m.cliente, 13, 40);
+  twoField('Teléfono', m.telefono, 'Correo', m.correo);
+  if(m.direccion) field('Dirección', m.direccion, 13, 40);
   y += 3;
 
-  // ── ACCESORIOS ──
-  if (y > 220) { doc.addPage(); y = 15; }
-  sectionTitle('Accesorios Entregados');
-  doc.setFillColor(...colors.surface);
-  doc.rect(10, y, pw - 20, 5.5, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...colors.muted);
-  doc.text('ACCESORIO', 14, y + 3.8);
-  doc.text('ENTREGADO', pw / 2 - 10, y + 3.8, { align: 'center' });
-  doc.text('OBSERVACIONES', pw / 2 + 10, y + 3.8);
-  y += 5.5;
+  // ── DATOS IMPRESORA ──────────────────────────────────────
+  secTitle('Datos de la Impresora');
+  twoField('Marca', m.marca, 'Modelo', m.modelo);
+  twoField('Tecnología', m.tecnologia, 'No. de Serie', m.serie||'—');
 
-  (m.accesorios || []).forEach((ac, ai) => {
-    if (ai % 2 === 0) { doc.setFillColor(22, 22, 34); doc.rect(10, y, pw - 20, 5.5, 'F'); }
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...colors.light);
-    doc.text(ac.nombre, 14, y + 3.8);
-    const acC = ac.entregado ? colors.success : colors.surface; doc.setFillColor(acC[0], acC[1], acC[2]);
-    doc.roundedRect(pw/2 - 12.5, y + 0.5, 4, 4, 0.5, 0.5, 'F');
-    doc.setDrawColor(...colors.border); doc.roundedRect(pw/2 - 12.5, y + 0.5, 4, 4, 0.5, 0.5, 'S');
-    doc.setTextColor(...colors.muted);
-    doc.text(ac.obs || '', pw/2 + 10, y + 3.8);
-    y += 5.5;
+  // Motivo ingreso como chips
+  checkPage(12);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.purpleLight);
+  doc.text('Motivo de Ingreso:', 13, y); y += 5;
+  const motivos = m.motivos||[];
+  let mx = 13;
+  motivos.forEach(mot => {
+    const w = doc.getTextWidth(mot) + 6;
+    doc.setFillColor(...C.rowAlt);
+    doc.setDrawColor(...C.border);
+    doc.roundedRect(mx, y-4, w, 6, 1, 1, 'FD');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.purpleLight);
+    doc.text(mot, mx+3, y);
+    mx += w + 3;
   });
-  y += 3;
+  y += 8;
 
-  // ── OBS TÉCNICO ──
-  if (y > 220) { doc.addPage(); y = 15; }
-  sectionTitle('Observaciones del Técnico');
-  doc.setFillColor(...colors.surface);
-  doc.roundedRect(10, y, pw - 20, 18, 1, 1, 'F');
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...colors.light);
-  const obsLines = doc.splitTextToSize(m.obsTecnico || '', pw - 28);
-  doc.text(obsLines.slice(0, 4), 14, y + 5);
-  y += 22;
-
-  // ── CONDICIONES ──
-  if (y > 200) { doc.addPage(); y = 15; }
-  sectionTitle('Condiciones del Servicio');
-  const condiciones = [
-    'El equipo se recibe sin respaldo de información.',
-    'El taller no se hace responsable por fallas no reportadas previamente.',
-    'El diagnóstico puede generar un costo adicional.',
-    'El tiempo de entrega depende del diagnóstico y disponibilidad de refacciones.',
-  ];
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...colors.muted);
-  condiciones.forEach(c => {
-    doc.text(`• ${c}`, 14, y); y += 4.5;
-  });
-  y += 4;
-
-  // ── AVISO LEGAL ──
-  if (y > 210) { doc.addPage(); y = 15; }
-  doc.setFillColor(...colors.surface);
-  doc.roundedRect(10, y, pw - 20, 20, 1, 1, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...colors.orange);
-  doc.text('AVISO LEGAL', 14, y + 5);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(...colors.muted);
-  const legal = 'El cliente autoriza al taller Crea3DCancún a realizar pruebas, diagnóstico y manipulación técnica del equipo. El taller no se hace responsable por pérdida de información, configuraciones, daños previos no reportados ni por fallas derivadas del desgaste normal del equipo. Toda reparación o mantenimiento se realizará previa autorización del cliente. Los equipos no reclamados en más de 30 días naturales podrán generar cargos por almacenaje.';
-  const legalLines = doc.splitTextToSize(legal, pw - 28);
-  doc.text(legalLines, 14, y + 10);
+  // ── PROBLEMA ─────────────────────────────────────────────
+  secTitle('Problema Reportado por el Cliente');
+  checkPage(20);
+  doc.setFillColor(...C.rowAlt);
+  doc.roundedRect(12, y-2, pw-24, 18, 2, 2, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.darkText);
+  const probLines = doc.splitTextToSize(m.problema||'—', pw-32);
+  doc.text(probLines, 16, y+4);
   y += 24;
 
-  // ── FIRMAS ──
-  if (y > 240) { doc.addPage(); y = 15; }
-  y += 6;
-  const half = (pw - 20) / 2;
-  doc.setDrawColor(...colors.border);
-  doc.line(12, y + 14, 12 + half - 6, y + 14);
-  doc.line(pw / 2 + 4, y + 14, pw - 12, y + 14);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...colors.muted);
-  doc.text('Nombre y firma del cliente', 14, y + 18);
-  doc.text(m.cliente || '', 14, y + 22);
-  doc.text('Nombre y firma del técnico', pw / 2 + 6, y + 18);
+  // ── ESTADO FÍSICO ────────────────────────────────────────
+  secTitle('Estado Físico al Recibir');
+  const ef = m.estadoFisico||[];
+  if(ef.length > 0) {
+    // Table header
+    doc.setFillColor(...C.purple);
+    doc.rect(12, y-2, pw-24, 7, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.white);
+    doc.text('CONCEPTO', 15, y+2.5);
+    doc.text('SÍ', pw/2-15, y+2.5, {align:'center'});
+    doc.text('NO', pw/2+5, y+2.5, {align:'center'});
+    doc.text('OBSERVACIONES', pw/2+18, y+2.5);
+    y += 8;
 
-  // Footer
-  const fY = doc.internal.pageSize.getHeight() - 6;
-  doc.setFontSize(6.5); doc.setTextColor(...colors.muted);
-  doc.text(`Crea3DCancún  •  www.crea3dcancun.com  •  Folio: ${m.id}`, pw / 2, fY, { align: 'center' });
+    ef.forEach((item, idx2) => {
+      checkPage(8);
+      doc.setFillColor(idx2%2===0 ? C.white : C.rowAlt);
+      doc.rect(12, y-3, pw-24, 7, 'F');
+      doc.setDrawColor(...C.border);
+      doc.rect(12, y-3, pw-24, 7, 'S');
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.darkText);
+      doc.text(item.concepto||'', 15, y+1.5);
+      // SI checkbox
+      if(item.si) { doc.setFillColor(...C.success); doc.circle(pw/2-15, y, 2.5, 'F'); }
+      else { doc.setDrawColor(...C.border); doc.circle(pw/2-15, y, 2.5, 'S'); }
+      // NO checkbox
+      if(item.no) { doc.setFillColor(...C.danger); doc.circle(pw/2+5, y, 2.5, 'F'); }
+      else { doc.setDrawColor(...C.border); doc.circle(pw/2+5, y, 2.5, 'S'); }
+      // Obs
+      if(item.obs) { doc.setFontSize(7); doc.setTextColor(...C.gray); doc.text(item.obs, pw/2+18, y+1.5); }
+      y += 7;
+    });
+    y += 4;
+  }
 
-  doc.save(`Nota_Recepcion_${m.id}_${m.cliente.replace(/\s+/g,'_')}.pdf`);
-  toast('PDF generado correctamente ✓');
+  // ── ACCESORIOS ───────────────────────────────────────────
+  const acc = m.accesorios||[];
+  const entregados = acc.filter(a=>a.entregado);
+  if(entregados.length > 0) {
+    secTitle('Accesorios Entregados');
+    doc.setFillColor(...C.purple);
+    doc.rect(12, y-2, pw-24, 7, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.white);
+    doc.text('ACCESORIO', 15, y+2.5);
+    doc.text('ESTADO', pw-50, y+2.5);
+    doc.text('OBSERVACIONES', pw/2+10, y+2.5);
+    y += 8;
+    entregados.forEach((a, idx3) => {
+      checkPage(8);
+      doc.setFillColor(idx3%2===0 ? C.white : C.rowAlt);
+      doc.rect(12, y-3, pw-24, 7, 'F');
+      doc.setDrawColor(...C.border); doc.rect(12, y-3, pw-24, 7, 'S');
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.darkText);
+      doc.text(a.nombre||'', 15, y+1.5);
+      doc.setFillColor(...C.success); doc.circle(pw-44, y, 2.5, 'F');
+      if(a.obs) { doc.setFontSize(7); doc.setTextColor(...C.gray); doc.text(a.obs, pw/2+10, y+1.5); }
+      y += 7;
+    });
+    y += 4;
+  }
+
+  // ── COSTOS ───────────────────────────────────────────────
+  if(m.costoTotal || m.anticipo) {
+    secTitle('Costos del Servicio');
+    checkPage(30);
+    doc.setFillColor(...C.rowAlt);
+    doc.roundedRect(12, y-2, pw-24, 28, 2, 2, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.purpleLight);
+    doc.text('Costo Total del Servicio:', 16, y+6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...C.purple);
+    doc.text('$'+(m.costoTotal||0), 90, y+6);
+    if(m.anticipo) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
+      doc.text('Anticipo recibido:', 16, y+14);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...C.success);
+      doc.text('$'+m.anticipo, 90, y+14);
+      doc.setFont('helvetica','normal'); doc.setTextColor(...C.gray);
+      doc.text('Saldo pendiente:', 16, y+21);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...C.danger);
+      const saldo = (parseFloat(m.costoTotal)||0)-(parseFloat(m.anticipo)||0);
+      doc.text('$'+Math.max(0,saldo).toLocaleString('es-MX'), 90, y+21);
+    }
+    y += 34;
+  }
+
+  // ── FIRMAS ───────────────────────────────────────────────
+  checkPage(35);
+  y += 5;
+  doc.setDrawColor(...C.border);
+  doc.line(20, y+20, 85, y+20);
+  doc.line(pw-85, y+20, pw-20, y+20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.gray);
+  doc.text('Firma del Cliente', 52, y+25, {align:'center'});
+  doc.text('Recibido por Crea3D', pw-52, y+25, {align:'center'});
+  doc.text(m.cliente||'', 52, y+30, {align:'center'});
+  y += 35;
+
+  // ── FOOTER ───────────────────────────────────────────────
+  doc.setFillColor(...C.purple);
+  doc.rect(0, ph-10, pw, 10, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.lavender);
+  doc.text('Crea3D Cancún  ·  www.crea3dcancun.com  ·  Folio: '+(m.id||''), pw/2, ph-4, {align:'center'});
+
+  doc.save('Nota_Recepcion_'+(m.id||'')+'_'+(m.cliente||'').replace(/\s+/g,'_')+'.pdf');
 }
 
-// ===================== INIT =====================
-load();
-renderDashboard();
-
-renderServicios();
-</script>
-<script>
-// Firebase sync - después del script principal
-(function(){
-  var ind=document.getElementById('fb-ind');
-  function showInd(msg,c){ind.textContent=msg;ind.style.background=c||'#059669';ind.style.color='#fff';ind.style.opacity='1';clearTimeout(ind._t);ind._t=setTimeout(function(){ind.style.opacity='0';},3000);}
-  var _origSave=window.save;
-  window.save=function(){
-    if(_origSave)_origSave();
-    if(typeof DB==='undefined')return;
-    _fbRef.set({servicios:DB.servicios||[],mantenimiento:DB.mantenimiento||[],ts:new Date().toISOString()})
-      .then(function(){showInd('☁️ Guardado');})
-      .catch(function(e){console.error(e);showInd('⚠️ Error','#dc2626');});
-  };
-  showInd('⏳ Sincronizando...','#7c3aed');
-  _fbRef.get().then(function(snap){
-    if(snap.exists&&typeof DB!=='undefined'){
-      var d=snap.data();
-      if(d.servicios&&d.servicios.length>(DB.servicios||[]).length)DB.servicios=d.servicios;
-      if(d.mantenimiento&&d.mantenimiento.length>(DB.mantenimiento||[]).length)DB.mantenimiento=d.mantenimiento;
-      try{localStorage.setItem('crea3d_db',JSON.stringify(DB));}catch(e){}
-      showInd('☁️ Sincronizado');
-      setTimeout(function(){renderServicios();renderMantenimiento();},200);
-    }else showInd('☁️ Conectado');
-  }).catch(function(e){console.error(e);showInd('⚠️ Sin conexión','#dc2626');});
-})();
-</script>
-
-<script>
-const MN_PDF = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const fmtD_PDF = d => { if(!d) return '—'; const [y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
-const fmt_PDF = n => n ? '$'+Math.round(n).toLocaleString('es-MX') : '—';
-
-function _pdfHeader(doc, titulo, hoy, W) {
-  doc.setFillColor(45,27,105); doc.rect(0,0,W,22,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
-  doc.text('CREA3D CANCÚN — '+titulo, 14, 10);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text('Fecha: '+hoy, W-14, 10, {align:'right'});
-}
-
-function _pdfStats(doc, stats, W) {
-  const sw = (W-28)/stats.length;
-  stats.forEach((s,i) => {
-    const x = 14+i*sw;
-    doc.setFillColor(240,235,255); doc.roundedRect(x,26,sw-3,14,2,2,'F');
-    doc.setTextColor(124,58,237); doc.setFontSize(7); doc.setFont('helvetica','bold');
-    doc.text(s[0].toUpperCase(), x+3, 32);
-    doc.setTextColor(26,26,46); doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text(String(s[1]), x+3, 39);
-  });
-}
-
-function _pdfTableHeader(doc, cols, y, W) {
-  doc.setFillColor(45,27,105); doc.rect(14,y,W-28,8,'F');
-  doc.setTextColor(196,181,253); doc.setFontSize(7); doc.setFont('helvetica','bold');
-  let cx=14; cols.forEach(c => { doc.text(c.h, cx+1, y+5.5); cx+=c.w; });
-}
-
-function _pdfFooter(doc, hoy, W, H) {
-  doc.setFillColor(45,27,105); doc.rect(0,H-8,W,8,'F');
-  doc.setTextColor(196,181,253); doc.setFontSize(7);
-  doc.text('Crea3D Cancún — Sistema de Gestión', 14, H-3);
-  doc.text(hoy, W-14, H-3, {align:'right'});
-}
 
 function exportServiciosPDF(scope) {
   if(!window.jspdf) { alert('Cargando librería PDF, intenta en un momento...'); return; }
@@ -3151,7 +3113,7 @@ function exportServiciosPDF(scope) {
     let cx=14;
     vals.forEach((v,vi) => {
       if(vi===9){
-        doc.setTextColor(s.estado==='Completado'?[5,150,105]:s.estado==='Pendiente'?[217,119,6]:[26,26,46]);
+        if(s.estado==='Completado') doc.setTextColor(5,150,105); else if(s.estado==='Pendiente') doc.setTextColor(217,119,6); else doc.setTextColor(26,26,46);
       } else doc.setTextColor(26,26,46);
       doc.text(doc.splitTextToSize(String(v),cols[vi].w-2)[0]||'', cx+1, y+6);
       cx+=cols[vi].w;
@@ -3221,7 +3183,7 @@ function exportMantPDF(scope) {
     let cx=14;
     vals.forEach((v,vi) => {
       if(vi===7){
-        doc.setTextColor(m.estado==='Entregado'?[5,150,105]:m.estado==='Listo'?[3,105,161]:[217,119,6]);
+        if(m.estado==='Entregado') doc.setTextColor(5,150,105); else if(m.estado==='Listo') doc.setTextColor(3,105,161); else doc.setTextColor(217,119,6);
       } else doc.setTextColor(26,26,46);
       doc.text(doc.splitTextToSize(String(v),cols[vi].w-2)[0]||'', cx+1, y+6);
       cx+=cols[vi].w;
