@@ -3055,6 +3055,45 @@ function exportNotaPDF(i) {
 }
 
 
+// ── PDF Helper functions ──────────────────────────────────────
+const MN_PDF = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const fmtD_PDF = d => { if(!d) return '—'; const [y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
+const fmt_PDF = n => n ? '$'+Math.round(n).toLocaleString('es-MX') : '—';
+
+function _pdfHeader(doc, titulo, hoy, W) {
+  doc.setFillColor(45,27,105); doc.rect(0,0,W,22,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('CREA3D CANCÚN — '+titulo, 14, 10);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Fecha: '+hoy, W-14, 10, {align:'right'});
+}
+
+function _pdfStats(doc, stats, W) {
+  const sw = (W-28)/stats.length;
+  stats.forEach((s,i) => {
+    const x = 14+i*sw;
+    doc.setFillColor(240,235,255); doc.roundedRect(x,26,sw-3,14,2,2,'F');
+    doc.setTextColor(124,58,237); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(s[0].toUpperCase(), x+3, 32);
+    doc.setTextColor(26,26,46); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(String(s[1]), x+3, 39);
+  });
+}
+
+function _pdfTableHeader(doc, cols, y, W) {
+  doc.setFillColor(45,27,105); doc.rect(14,y,W-28,8,'F');
+  doc.setTextColor(196,181,253); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  let cx=14; cols.forEach(c => { doc.text(c.h, cx+1, y+5.5); cx+=c.w; });
+}
+
+function _pdfFooter(doc, hoy, W, H) {
+  doc.setFillColor(45,27,105); doc.rect(0,H-8,W,8,'F');
+  doc.setTextColor(196,181,253); doc.setFontSize(7);
+  doc.text('Crea3D Cancún — Sistema de Gestión', 14, H-3);
+  doc.text(hoy, W-14, H-3, {align:'right'});
+}
+
+
 function exportServiciosPDF(scope) {
   if(!window.jspdf) { alert('Cargando librería PDF, intenta en un momento...'); return; }
   const {jsPDF} = window.jspdf;
@@ -3194,6 +3233,11 @@ function exportMantPDF(scope) {
   _pdfFooter(doc, hoy, W, H);
   doc.save('mantenimiento-'+scope+'-'+hoy.replace(/\//g,'-')+'.pdf');
 }
+
+
+// ── Init ──
+load();
+renderServicios();
 </script>
 
 
