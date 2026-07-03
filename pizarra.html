@@ -203,7 +203,7 @@ tr:hover td{background:#faf8ff}
 
 <div class="pizarra-tabs">
   <div class="pizarra-tab active" id="tab-activos" onclick="switchPizarraTab('activos')">
-    <i class="ti ti-clipboard-list"></i> Activos <span class="tab-count" id="count-activos">0</span>
+    <i class="ti ti-clipboard-list"></i> Pendientes <span class="tab-count" id="count-activos">0</span>
   </div>
   <div class="pizarra-tab" id="tab-entregados" onclick="switchPizarraTab('entregados')">
     <i class="ti ti-check"></i> Pagados y Entregados <span class="tab-count" id="count-entregados">0</span>
@@ -721,6 +721,14 @@ renderTable = function(){
 };
 
 poblarAnios();
+// Auto-filtrar por mes actual
+(function(){
+  var now = new Date();
+  var mes = String(now.getMonth()+1);
+  var anio = String(now.getFullYear());
+  document.getElementById('f-mes').value = mes;
+  document.getElementById('f-anio').value = anio;
+})();
 renderTable();
 
 
