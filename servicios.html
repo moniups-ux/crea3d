@@ -657,6 +657,34 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
 .btn-volver{position:fixed;bottom:20px;left:20px;background:#2d1b69;color:#fff;border:none;border-radius:50px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(45,27,105,.45);display:flex;align-items:center;gap:7px;z-index:9998;text-decoration:none;transition:all .2s}
 .btn-volver:hover{background:#4c1d95;transform:translateY(-2px)}
 </style>
+<style>
+:root{--bg:#1a1535!important;--surface:#231d4a!important;--surface2:#2d2660!important;--border:#4a3f8a!important;--accent:#7c3aed!important;--accent2:#a78bfa!important;--accent3:#06b6d4!important;--text:#f0f0ff!important;--muted:#9ca3af!important}
+.sidebar{background:#2d1b69!important;border-right:1px solid rgba(124,58,237,.3)!important}
+.logo{border-bottom:1px solid rgba(124,58,237,.3)!important}
+.logo-title span{color:#a78bfa!important}
+.nav-item:hover{background:rgba(124,58,237,.2)!important;color:#fff!important}
+.nav-item.active{background:rgba(124,58,237,.3)!important;color:#a78bfa!important}
+.mobile-nav{background:#2d1b69!important;border-top:1px solid rgba(124,58,237,.3)!important}
+.mobile-nav-item.active{color:#a78bfa!important}
+.btn-primary{background:#7c3aed!important}.btn-primary:hover{background:#6d28d9!important}
+.tag-filter.active,.tag-filter:hover{border-color:#7c3aed!important;color:#a78bfa!important}
+.stat-card{background:#231d4a!important;border-color:rgba(124,58,237,.25)!important}
+.stat-card:hover{border-color:#7c3aed!important}
+.panel{background:#231d4a!important;border-color:rgba(124,58,237,.25)!important}
+.panel-header{border-bottom-color:rgba(124,58,237,.2)!important}
+th{background:#2d1b69!important;color:#c4b5fd!important}
+tr:hover td{background:rgba(124,58,237,.05)!important}
+.modal{background:#231d4a!important;border-color:rgba(124,58,237,.3)!important}
+.modal-header{border-bottom-color:rgba(124,58,237,.2)!important}
+.modal-footer{border-top-color:rgba(124,58,237,.2)!important}
+input,select,textarea{background:#2d2660!important;border-color:rgba(124,58,237,.3)!important}
+input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
+.modal-overlay{display:none!important}
+.modal-overlay.open{display:flex!important;align-items:center!important;justify-content:center!important;z-index:9999!important}
+.crea3d-top{background:#2d1b69!important}
+.section-tabs{background:#2d1b69!important;border-bottom:1px solid rgba(124,58,237,.3)!important}
+.section-tab.active{border-bottom-color:#7c3aed!important;color:#fff!important}
+</style>
 </head>
 <body>
 <div id="fb-ind"></div>
@@ -684,22 +712,21 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
       <button class="btn btn-primary" onclick="openModal('modal-servicio')">+ Nuevo Servicio</button>
     </div>
 
-    <!-- Stats de ganancias -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
-      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--success)">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--success)">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Total Ganancia General</div>
         <div style="font-size:22px;font-weight:700;color:var(--success)" id="serv-stat-total">$0</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-total-sub">servicios completados</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-total-sub">0 completados</div>
       </div>
-      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent2)">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent2)">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px" id="serv-stat-mes-label">Ganancia del Mes</div>
         <div style="font-size:22px;font-weight:700;color:var(--accent2)" id="serv-stat-mes">$0</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-mes-sub">este mes</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-mes-sub">0 completados</div>
       </div>
-      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent)">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent)">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Por Cobrar</div>
         <div style="font-size:22px;font-weight:700;color:var(--accent)" id="serv-stat-pendiente">$0</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-pendiente-sub">servicios activos/pendientes</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-pendiente-sub">0 activos</div>
       </div>
     </div>
 
@@ -1202,25 +1229,20 @@ function refreshPage(name) {
 
 // ===================== MODALS =====================
 function openModal(id) {
-  // Al abrir modal de servicio
   if(id === 'modal-servicio') {
-    // Si es nuevo registro (edit-idx = -1), resetear tipo de servicio
     const editIdx = document.getElementById('serv-edit-idx')?.value;
-    if(editIdx === '-1' || editIdx === undefined) {
-      // Seleccionar Diseño+Impresión por defecto
+    if(editIdx === '-1' || !editIdx) {
       const ambos = document.getElementById('serv-tipo-ambos');
-      if(ambos) { ambos.checked = true; }
-      // Limpiar fecha entrega
+      if(ambos) ambos.checked = true;
       const fe = document.getElementById('serv-fecha-entrega');
       if(fe) fe.value = '';
     }
-    // Siempre mostrar campos de costo y actualizar UI
     setTimeout(function(){
-      if(typeof updateServTipo === 'function') updateServTipo();
-      const dg = document.getElementById('serv-costo-diseno-group');
-      const ig = document.getElementById('serv-costo-impresion-group');
-      if(dg) dg.style.display = '';
-      if(ig) ig.style.display = '';
+      if(typeof updateServTipo==='function') updateServTipo();
+      const dg=document.getElementById('serv-costo-diseno-group');
+      const ig=document.getElementById('serv-costo-impresion-group');
+      if(dg) dg.style.display='';
+      if(ig) ig.style.display='';
     }, 50);
   }
   if (id === 'modal-movimiento') populateMovimientoSelect();
@@ -2093,26 +2115,21 @@ function renderServicios() {
     return matchQ && matchF;
   });
 
-  // Calcular stats de ganancias
-  const now = new Date();
-  const curMes = now.getMonth()+1, curAnio = now.getFullYear();
-  const completados = DB.servicios.filter(s => s.estado === 'Completado');
-  const totalGanancia = completados.reduce((a,s) => a+(s.precioTotal||0), 0);
-  const mesCom = completados.filter(s => {
-    if(!s.fecha) return false;
-    const [y,m] = s.fecha.split('-');
-    return parseInt(m)===curMes && parseInt(y)===curAnio;
-  });
-  const mesGanancia = mesCom.reduce((a,s) => a+(s.precioTotal||0), 0);
-  const pendientes = DB.servicios.filter(s => s.estado !== 'Completado');
-  const porCobrar = pendientes.reduce((a,s) => a+(s.precio||0), 0);
-  const mn=['','Enero','Feb','Mar','Abr','Mayo','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const elTotal = document.getElementById('serv-stat-total');
-  const elMes = document.getElementById('serv-stat-mes');
-  const elPend = document.getElementById('serv-stat-pendiente');
-  if(elTotal){ elTotal.textContent='$'+Math.round(totalGanancia).toLocaleString('es-MX'); document.getElementById('serv-stat-total-sub').textContent=completados.length+' completado'+(completados.length!==1?'s':''); }
-  if(elMes){ elMes.textContent='$'+Math.round(mesGanancia).toLocaleString('es-MX'); document.getElementById('serv-stat-mes-label').textContent='Ganancia — '+mn[curMes]+' '+curAnio; document.getElementById('serv-stat-mes-sub').textContent=mesCom.length+' completado'+(mesCom.length!==1?'s':''); }
-  if(elPend){ elPend.textContent='$'+Math.round(porCobrar).toLocaleString('es-MX'); document.getElementById('serv-stat-pendiente-sub').textContent=pendientes.length+' activo'+(pendientes.length!==1?'s':''); }
+  // Stats de ganancias
+  var _now=new Date(),_cm=_now.getMonth()+1,_cy=_now.getFullYear();
+  var _comp=DB.servicios.filter(function(s){return s.estado==='Completado';});
+  var _totG=_comp.reduce(function(a,s){return a+(s.precioTotal||0);},0);
+  var _mesC=_comp.filter(function(s){if(!s.fecha)return false;var p=s.fecha.split('-');return parseInt(p[1])===_cm&&parseInt(p[0])===_cy;});
+  var _mesG=_mesC.reduce(function(a,s){return a+(s.precioTotal||0);},0);
+  var _pend=DB.servicios.filter(function(s){return s.estado!=='Completado';});
+  var _porC=_pend.reduce(function(a,s){return a+(s.precio||0);},0);
+  var _mn=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var _et=document.getElementById('serv-stat-total');
+  var _em=document.getElementById('serv-stat-mes');
+  var _ep=document.getElementById('serv-stat-pendiente');
+  if(_et){_et.textContent='$'+Math.round(_totG).toLocaleString('es-MX');document.getElementById('serv-stat-total-sub').textContent=_comp.length+' completado'+(_comp.length!==1?'s':'');}
+  if(_em){_em.textContent='$'+Math.round(_mesG).toLocaleString('es-MX');document.getElementById('serv-stat-mes-label').textContent='Ganancia — '+_mn[_cm]+' '+_cy;document.getElementById('serv-stat-mes-sub').textContent=_mesC.length+' completado'+(_mesC.length!==1?'s':'');}
+  if(_ep){_ep.textContent='$'+Math.round(_porC).toLocaleString('es-MX');document.getElementById('serv-stat-pendiente-sub').textContent=_pend.length+' activo'+(_pend.length!==1?'s':'');}
 
   const tbody = document.getElementById('tbody-servicios');
   const empty = document.getElementById('empty-servicios');
@@ -2136,6 +2153,7 @@ function renderServicios() {
         <strong>${s.cliente||'—'}</strong>
         ${s.telefono ? `<br><span style="font-size:11px;color:var(--muted)">${s.telefono}</span>` : ''}
         ${s.fecha ? `<br><span style="font-size:10px;color:var(--muted)">${fmtDate(s.fecha)}</span>` : ''}
+        ${s.fechaEntrega ? `<br><span style="font-size:10px;color:var(--accent2)">📦 ${fmtDate(s.fechaEntrega)}</span>` : ''}
       </td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.descripcion||'—'}</td>
       <td>${tipoBadge(s.tipoServicio)}</td>
@@ -2184,7 +2202,7 @@ function saveServicio() {
     cliente,
     telefono:     document.getElementById('serv-telefono').value,
     fecha:        document.getElementById('serv-fecha').value,
-    fechaEntrega: (document.getElementById('serv-fecha-entrega')?.value || ''),
+    fechaEntrega: (document.getElementById('serv-fecha-entrega')?.value||''),
     tipoServicio,
     tipoPieza,
     descripcion:  document.getElementById('serv-desc').value,
@@ -2206,8 +2224,8 @@ function editServicio(i) {
   document.getElementById('serv-cliente').value    = s.cliente||'';
   document.getElementById('serv-telefono').value   = s.telefono||'';
   document.getElementById('serv-fecha').value      = s.fecha||'';
-  const _fe2 = document.getElementById('serv-fecha-entrega');
-  if(_fe2) _fe2.value = s.fechaEntrega||'';
+  const _fe=document.getElementById('serv-fecha-entrega');
+  if(_fe) _fe.value=s.fechaEntrega||'';
   document.getElementById('serv-desc').value       = s.descripcion||'';
   document.getElementById('serv-material').value   = s.material||'';
   document.getElementById('serv-tiempo').value     = s.tiempo||0;
