@@ -767,7 +767,7 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
               <th>ID</th>
               <th>Cliente</th>
               <th>Descripción</th>
-              <th>Tipo Servicio</th>
+              <th>Tipo Servicio / Pieza</th>
               <th>Tipo de Material</th>
               <th>Tiempo (h)</th>
               <th>Anticipo</th>
@@ -1291,20 +1291,17 @@ function openModal(id) {
   if(id === 'modal-servicio') {
     const editIdx = parseInt(document.getElementById('serv-edit-idx')?.value||'-1');
     if(editIdx === -1) {
-      // Nuevo registro: seleccionar Diseño+Impresión
       const ambos = document.getElementById('serv-tipo-ambos');
-      if(ambos) { ambos.checked = true; }
+      if(ambos) ambos.checked = true;
       const fe = document.getElementById('serv-fecha-entrega');
       if(fe) fe.value = '';
     }
-    // Forzar actualización de campos de costo
-    setTimeout(function(){
-      const dg=document.getElementById('serv-costo-diseno-group');
-      const ig=document.getElementById('serv-costo-impresion-group');
-      if(dg) dg.style.display='';
-      if(ig) ig.style.display='';
-      if(typeof updateServTipo==='function') updateServTipo();
-    }, 100);
+    // Mostrar campos de costo siempre
+    const dg=document.getElementById('serv-costo-diseno-group');
+    const ig=document.getElementById('serv-costo-impresion-group');
+    if(dg) dg.style.display='';
+    if(ig) ig.style.display='';
+    setTimeout(function(){ if(typeof updateServTipo==='function') updateServTipo(); }, 50);
   }
   if (id === 'modal-movimiento') populateMovimientoSelect();
   if (id === 'modal-venta') populateVentaSelect();
@@ -1808,7 +1805,7 @@ function renderVentasServicios() {
       <td style="color:var(--muted)">${fmtDate(s.fecha)||'—'}</td>
       <td><strong>${s.cliente||'—'}</strong></td>
       <td style="color:var(--muted)">${s.telefono||'—'}</td>
-      <td>${tipoBadge(s.tipoServicio)}</td>
+      <td>${tipoBadge(s.tipoServicio)}<br><span style="font-size:10px;color:var(--accent2)">${s.tipoPieza||''}</span></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.descripcion||'—'}</td>
       <td style="color:var(--warning)">$${fmt(s.anticipo)}</td>
       <td style="color:var(--success);font-weight:600">$${fmt(s.precio)}</td>
@@ -2075,8 +2072,9 @@ function updateServTipo() {
   });
   const map = { 'Diseño':'diseno', 'Impresión':'impresion', 'Diseño+Impresión':'ambos' };
   if (map[val]) document.getElementById(`lbl-serv-${map[val]}`).style.borderColor = 'var(--accent)';
-  const showDiseno = val === 'Diseño' || val === 'Diseño+Impresión';
-  const showImpresion = val === 'Impresión' || val === 'Diseño+Impresión';
+  // Si no hay nada seleccionado, mostrar ambos por defecto
+  const showDiseno = !val || val === 'Diseño' || val === 'Diseño+Impresión';
+  const showImpresion = !val || val === 'Impresión' || val === 'Diseño+Impresión';
   const dg = document.getElementById('serv-costo-diseno-group');
   const ig = document.getElementById('serv-costo-impresion-group');
   if (dg) dg.style.display = showDiseno ? '' : 'none';
@@ -2236,7 +2234,7 @@ function renderServicios() {
         ${s.fechaEntrega ? `<br><span style="font-size:10px;color:var(--accent2)">📦 ${fmtDate(s.fechaEntrega)}</span>` : ''}
       </td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.descripcion||'—'}</td>
-      <td>${tipoBadge(s.tipoServicio)}</td>
+      <td>${tipoBadge(s.tipoServicio)}<br><span style="font-size:10px;color:var(--accent2)">${s.tipoPieza||''}</span></td>
       <td style="color:var(--accent3)">${s.material||'—'}</td>
       <td style="color:var(--muted)">${s.tiempo||0}h</td>
       <td style="color:var(--warning)">$${fmt(s.anticipo)}</td>
