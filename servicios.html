@@ -684,6 +684,25 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
       <button class="btn btn-primary" onclick="openModal('modal-servicio')">+ Nuevo Servicio</button>
     </div>
 
+    <!-- Stats de ganancias -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--success)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Total Ganancia General</div>
+        <div style="font-size:22px;font-weight:700;color:var(--success)" id="serv-stat-total">$0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-total-sub">servicios completados</div>
+      </div>
+      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent2)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px" id="serv-stat-mes-label">Ganancia del Mes</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent2)" id="serv-stat-mes">$0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-mes-sub">este mes</div>
+      </div>
+      <div class="stat-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Por Cobrar</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent)" id="serv-stat-pendiente">$0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="serv-stat-pendiente-sub">servicios activos/pendientes</div>
+      </div>
+    </div>
+
     <div class="panel">
       <div class="panel-header">
         <div class="search-bar">
@@ -2058,6 +2077,27 @@ function renderServicios() {
     const matchF = f === 'todos' || s.estado === f;
     return matchQ && matchF;
   });
+
+  // Calcular stats de ganancias
+  const now = new Date();
+  const curMes = now.getMonth()+1, curAnio = now.getFullYear();
+  const completados = DB.servicios.filter(s => s.estado === 'Completado');
+  const totalGanancia = completados.reduce((a,s) => a+(s.precioTotal||0), 0);
+  const mesCom = completados.filter(s => {
+    if(!s.fecha) return false;
+    const [y,m] = s.fecha.split('-');
+    return parseInt(m)===curMes && parseInt(y)===curAnio;
+  });
+  const mesGanancia = mesCom.reduce((a,s) => a+(s.precioTotal||0), 0);
+  const pendientes = DB.servicios.filter(s => s.estado !== 'Completado');
+  const porCobrar = pendientes.reduce((a,s) => a+(s.precio||0), 0);
+  const mn=['','Enero','Feb','Mar','Abr','Mayo','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const elTotal = document.getElementById('serv-stat-total');
+  const elMes = document.getElementById('serv-stat-mes');
+  const elPend = document.getElementById('serv-stat-pendiente');
+  if(elTotal){ elTotal.textContent='$'+Math.round(totalGanancia).toLocaleString('es-MX'); document.getElementById('serv-stat-total-sub').textContent=completados.length+' completado'+(completados.length!==1?'s':''); }
+  if(elMes){ elMes.textContent='$'+Math.round(mesGanancia).toLocaleString('es-MX'); document.getElementById('serv-stat-mes-label').textContent='Ganancia — '+mn[curMes]+' '+curAnio; document.getElementById('serv-stat-mes-sub').textContent=mesCom.length+' completado'+(mesCom.length!==1?'s':''); }
+  if(elPend){ elPend.textContent='$'+Math.round(porCobrar).toLocaleString('es-MX'); document.getElementById('serv-stat-pendiente-sub').textContent=pendientes.length+' activo'+(pendientes.length!==1?'s':''); }
 
   const tbody = document.getElementById('tbody-servicios');
   const empty = document.getElementById('empty-servicios');
