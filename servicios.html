@@ -712,6 +712,24 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
       <button class="btn btn-primary" onclick="openModal('modal-servicio')">+ Nuevo Servicio</button>
     </div>
 
+    <!-- Filtro por mes -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Ver por mes:</span>
+      <select id="serv-filtro-mes" onchange="renderServicios()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+        <option value="">Todos los meses</option>
+        <option value="1">Enero</option><option value="2">Febrero</option>
+        <option value="3">Marzo</option><option value="4">Abril</option>
+        <option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option>
+        <option value="9">Septiembre</option><option value="10">Octubre</option>
+        <option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="serv-filtro-anio" onchange="renderServicios()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+        <option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option>
+      </select>
+      <button onclick="document.getElementById('serv-filtro-mes').value='';renderServicios();" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer">Todos</button>
+    </div>
+
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--success)">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Total Ganancia General</div>
@@ -774,6 +792,43 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
         <div class="page-subtitle">Notas de recepción de impresoras</div>
       </div>
       <button class="btn btn-primary" onclick="openMantModal()">+ Nueva Nota de Recepción</button>
+    </div>
+
+    <!-- Stats mantenimiento -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--success)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Total Generado General</div>
+        <div style="font-size:22px;font-weight:700;color:var(--success)" id="mant-stat-total">$0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="mant-stat-total-sub">0 entregados</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--accent2)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px" id="mant-stat-mes-label">Generado del Mes</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent2)" id="mant-stat-mes">$0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="mant-stat-mes-sub">0 entregados</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--warning)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">En Proceso</div>
+        <div style="font-size:22px;font-weight:700;color:var(--warning)" id="mant-stat-proceso">$0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="mant-stat-proceso-sub">0 en proceso</div>
+      </div>
+    </div>
+
+    <!-- Filtro por mes -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Ver por mes:</span>
+      <select id="mant-filtro-mes" onchange="renderMantenimiento()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+        <option value="">Todos los meses</option>
+        <option value="1">Enero</option><option value="2">Febrero</option>
+        <option value="3">Marzo</option><option value="4">Abril</option>
+        <option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option>
+        <option value="9">Septiembre</option><option value="10">Octubre</option>
+        <option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="mant-filtro-anio" onchange="renderMantenimiento()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+        <option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option>
+      </select>
+      <button onclick="document.getElementById('mant-filtro-mes').value='';document.getElementById('mant-filtro-anio').value='2026';renderMantenimiento();" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer">Todos</button>
     </div>
 
     <div class="panel">
@@ -1019,6 +1074,10 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
           <div class="form-group">
             <label>Fecha de Recepción</label>
             <input type="date" id="mant-fecha">
+          </div>
+          <div class="form-group">
+            <label>📦 Fecha de Entrega</label>
+            <input type="date" id="mant-fecha-entrega">
           </div>
           <div class="form-group">
             <label>Hora</label>
@@ -2115,6 +2174,19 @@ function renderServicios() {
     return matchQ && matchF;
   });
 
+  // Filtro por mes en servicios
+  const _sMes = document.getElementById('serv-filtro-mes')?.value;
+  const _sAnio = document.getElementById('serv-filtro-anio')?.value;
+  if(_sMes || _sAnio) {
+    data = data.filter(function(s){
+      if(!s.fecha) return !_sMes;
+      const parts = s.fecha.split('-');
+      const mesOk = !_sMes || parseInt(parts[1])===parseInt(_sMes);
+      const anioOk = !_sAnio || parts[0]===_sAnio;
+      return mesOk && anioOk;
+    });
+  }
+
   // Stats de ganancias
   var _now=new Date(),_cm=_now.getMonth()+1,_cy=_now.getFullYear();
   var _comp=DB.servicios.filter(function(s){return s.estado==='Completado';});
@@ -2578,6 +2650,39 @@ function renderMantenimiento() {
     return matchQ && matchF;
   });
 
+  // Filtro por mes
+  const _mMes = document.getElementById('mant-filtro-mes')?.value;
+  const _mAnio = document.getElementById('mant-filtro-anio')?.value;
+  if(_mMes || _mAnio) {
+    data = data.filter(function(m){
+      if(!m.fecha) return !_mMes;
+      const parts = m.fecha.split('-');
+      const mesOk = !_mMes || parseInt(parts[1])===parseInt(_mMes);
+      const anioOk = !_mAnio || parts[0]===_mAnio;
+      return mesOk && anioOk;
+    });
+  }
+
+  // Stats de mantenimiento
+  var _mn2=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var _now2=new Date(),_cm2=_now2.getMonth()+1,_cy2=_now2.getFullYear();
+  var _entregados=DB.mantenimiento.filter(function(m){return m.estado==='Entregado';});
+  var _totM=_entregados.reduce(function(a,m){return a+(parseFloat(m.costoTotal)||0);},0);
+  var _mesEnt=_entregados.filter(function(m){
+    if(!m.fecha)return false;
+    var p=m.fecha.split('-');
+    return parseInt(p[1])===_cm2&&parseInt(p[0])===_cy2;
+  });
+  var _mesM=_mesEnt.reduce(function(a,m){return a+(parseFloat(m.costoTotal)||0);},0);
+  var _proc=DB.mantenimiento.filter(function(m){return m.estado!=='Entregado';});
+  var _procM=_proc.reduce(function(a,m){return a+(parseFloat(m.costoTotal)||0);},0);
+  var _et2=document.getElementById('mant-stat-total');
+  var _em2=document.getElementById('mant-stat-mes');
+  var _ep2=document.getElementById('mant-stat-proceso');
+  if(_et2){_et2.textContent='$'+Math.round(_totM).toLocaleString('es-MX');document.getElementById('mant-stat-total-sub').textContent=_entregados.length+' entregado'+(_entregados.length!==1?'s':'');}
+  if(_em2){_em2.textContent='$'+Math.round(_mesM).toLocaleString('es-MX');document.getElementById('mant-stat-mes-label').textContent='Generado — '+_mn2[_cm2]+' '+_cy2;document.getElementById('mant-stat-mes-sub').textContent=_mesEnt.length+' entregado'+(_mesEnt.length!==1?'s':'');}
+  if(_ep2){_ep2.textContent='$'+Math.round(_procM).toLocaleString('es-MX');document.getElementById('mant-stat-proceso-sub').textContent=_proc.length+' en proceso';}
+
   const tbody = document.getElementById('tbody-mantenimiento');
   const empty = document.getElementById('empty-mantenimiento');
   if (data.length === 0) { tbody.innerHTML = ''; empty.style.display = ''; return; }
@@ -2588,7 +2693,7 @@ function renderMantenimiento() {
     const cls = stColors[m.estado] || 'pending';
     return `<tr>
       <td style="color:var(--accent);font-weight:600;font-size:11px">${m.id||'—'}</td>
-      <td style="color:var(--muted)">${fmtDate(m.fecha)} ${m.hora||''}</td>
+      <td style="color:var(--muted)">${fmtDate(m.fecha)} ${m.hora||''}<br>${m.fechaEntrega?`<span style="font-size:10px;color:var(--accent2)">📦 ${fmtDate(m.fechaEntrega)}</span>`:''}</td>
       <td><strong>${m.cliente}</strong><br><span style="font-size:11px;color:var(--muted)">${m.telefono||''}</span></td>
       <td>${m.marca||'—'} ${m.modelo||''}<br><span style="font-size:11px;color:var(--muted)">${m.tecnologia||''}</span></td>
       <td style="font-size:11px">${(m.motivos||[]).join(', ')||'—'}</td>
@@ -2620,6 +2725,8 @@ function editMantenimiento(i) {
   document.getElementById('mant-fecha').value = m.fecha||'';
   document.getElementById('mant-hora').value = m.hora||'';
   document.getElementById('mant-estado').value = m.estado||'Recibido';
+  const _mfe=document.getElementById('mant-fecha-entrega');
+  if(_mfe) _mfe.value=m.fechaEntrega||'';
   document.getElementById('mant-cliente').value = m.cliente||'';
   document.getElementById('mant-telefono').value = m.telefono||'';
   document.getElementById('mant-correo').value = m.correo||'';
