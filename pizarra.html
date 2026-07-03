@@ -202,7 +202,10 @@ tr:hover td{background:#faf8ff}
 </div>
 
 <div class="pizarra-tabs">
-  <div class="pizarra-tab active" id="tab-activos" onclick="switchPizarraTab('activos')">
+  <div class="pizarra-tab active" id="tab-mes" onclick="switchPizarraTab('mes')">
+    <i class="ti ti-calendar-month"></i> Activos <span class="tab-count" id="count-mes">0</span>
+  </div>
+  <div class="pizarra-tab" id="tab-activos" onclick="switchPizarraTab('activos')">
     <i class="ti ti-clipboard-list"></i> Pendientes <span class="tab-count" id="count-activos">0</span>
   </div>
   <div class="pizarra-tab" id="tab-entregados" onclick="switchPizarraTab('entregados')">
@@ -222,7 +225,7 @@ tr:hover td{background:#faf8ff}
     </button>
     <button class="btn-clear-all" id="btn-clear" style="display:none" onclick="clearAll()"><i class="ti ti-x"></i> Limpiar</button>
   </div>
-  <div class="toolbar-row">
+  <div class="toolbar-row" id="filtro-fecha-row" style="display:none">
     <span class="filter-label-sm"><i class="ti ti-calendar" style="vertical-align:-2px"></i> Filtrar por:</span>
     <select class="mes-select" id="f-mes" onchange="onMesChange()">
       <option value="">— Mes —</option>
@@ -374,8 +377,33 @@ function esPagadoYEntregado(p){
 
 function switchPizarraTab(tab){
   pizarraTab=tab;
+  document.getElementById('tab-mes').classList.toggle('active',tab==='mes');
   document.getElementById('tab-activos').classList.toggle('active',tab==='activos');
   document.getElementById('tab-entregados').classList.toggle('active',tab==='entregados');
+  
+  const filtroFecha=document.getElementById('filtro-fecha-row');
+  var now=new Date();
+
+  if(tab==='mes'){
+    // ACTIVOS: mes actual con filtros visibles
+    if(filtroFecha) filtroFecha.style.display='flex';
+    document.getElementById('f-mes').value=String(now.getMonth()+1);
+    document.getElementById('f-anio').value=String(now.getFullYear());
+    document.getElementById('f-desde').value='';
+    document.getElementById('f-hasta').value='';
+  } else if(tab==='activos'){
+    // PENDIENTES: todos los meses, filtros visibles para buscar
+    if(filtroFecha) filtroFecha.style.display='flex';
+    document.getElementById('f-mes').value='';
+    document.getElementById('f-anio').value='';
+    document.getElementById('f-desde').value='';
+    document.getElementById('f-hasta').value='';
+  } else {
+    // PAGADOS Y ENTREGADOS: mes actual con filtros
+    if(filtroFecha) filtroFecha.style.display='flex';
+    document.getElementById('f-mes').value=String(now.getMonth()+1);
+    document.getElementById('f-anio').value=String(now.getFullYear());
+  }
   renderTable();
 }
 
@@ -449,6 +477,63 @@ function updateClearBtn(){
 function clearAll(){filterSel=[];['search','f-mes','f-desde','f-hasta'].forEach(i=>document.getElementById(i).value='');buildFchips();updateFilterUI();renderTable();}
 
 function getFiltered(){
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const mes=document.getElementById('f-mes').value,anio=document.getElementById('f-anio').value;
+  const desde=document.getElementById('f-desde').value,hasta=document.getElementById('f-hasta').value;
+
+  // Función para filtrar por fecha de pedido
+  function porFecha(p){
+    let mf=true;
+    const fr=p.tipo==='cita'?p.fechaCita:p.fecha;
+    if(fr){
+      const[py,pm]=fr.split('-');
+      if(mes&&pm!==mes.padStart(2,'0'))mf=false;
+      if(anio&&py!==anio)mf=false;
+      if(desde&&fr<desde)mf=false;
+      if(hasta&&fr>hasta)mf=false;
+    } else if(mes||desde||hasta) mf=false;
+    return mf;
+  }
+
+  // Función para filtrar por texto y estados
+  function porTexto(p){
+    const mq=!q||(p.cliente||'').toLowerCase().includes(q)||(p.nota||'').toLowerCase().includes(q);
+    const me=!filterSel.length||p.estados.some(k=>filterSel.includes(k));
+    return mq&&me;
+  }
+
+  // Actualizar contadores
+  const now=new Date();
+  const curMes=String(now.getMonth()+1).padStart(2,'0');
+  const curAnio=String(now.getFullYear());
+  document.getElementById('count-mes').textContent=pedidos.filter(p=>{
+    if(esPagadoYEntregado(p)) return false;
+    const fr=p.tipo==='cita'?p.fechaCita:p.fecha;
+    if(!fr) return false;
+    const[py,pm]=fr.split('-');
+    return pm===curMes&&py===curAnio;
+  }).length;
+  document.getElementById('count-activos').textContent=pedidos.filter(p=>!esPagadoYEntregado(p)).length;
+  document.getElementById('count-entregados').textContent=pedidos.filter(p=>esPagadoYEntregado(p)).length;
+
+  if(pizarraTab==='mes'){
+    // ACTIVOS: pedidos del mes actual no pagados/entregados
+    const base=pedidos.filter(p=>!esPagadoYEntregado(p));
+    return sortByFechaEntrega(base.filter(p=>porTexto(p)&&porFecha(p)));
+  }
+
+  if(pizarraTab==='activos'){
+    // PENDIENTES: todos los no pagados/entregados con búsqueda y filtro opcional de mes
+    const base=pedidos.filter(p=>!esPagadoYEntregado(p));
+    return sortByFechaEntrega(base.filter(p=>porTexto(p)&&porFecha(p)));
+  }
+
+  // PAGADOS Y ENTREGADOS
+  const base=pedidos.filter(p=>esPagadoYEntregado(p));
+  return base.filter(p=>porTexto(p)&&porFecha(p));
+}
+
+function getFiltered_UNUSED(){
   const q=document.getElementById('search').value.toLowerCase().trim();
   const mes=document.getElementById('f-mes').value,anio=document.getElementById('f-anio').value;
   const desde=document.getElementById('f-desde').value,hasta=document.getElementById('f-hasta').value;
@@ -721,13 +806,13 @@ renderTable = function(){
 };
 
 poblarAnios();
-// Auto-filtrar por mes actual
+// Iniciar en pestaña Activos (mes actual)
 (function(){
   var now = new Date();
-  var mes = String(now.getMonth()+1);
-  var anio = String(now.getFullYear());
-  document.getElementById('f-mes').value = mes;
-  document.getElementById('f-anio').value = anio;
+  document.getElementById('f-mes').value = String(now.getMonth()+1);
+  document.getElementById('f-anio').value = String(now.getFullYear());
+  var ff = document.getElementById('filtro-fecha-row');
+  if(ff) ff.style.display = 'flex';
 })();
 renderTable();
 
