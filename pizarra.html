@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
 <title>Pizarra de Pedidos - Crea3D Cancún</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -194,11 +195,27 @@ tr:hover td{background:#faf8ff}
   </div>
 </div>
 
-<div class="stats">
-  <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="st-total">0</div></div>
-  <div class="stat"><div class="stat-label">Por entregar</div><div class="stat-val" id="st-pend">0</div></div>
-  <div class="stat"><div class="stat-label">Cobrado</div><div class="stat-val grn" id="st-cobrado">$0</div></div>
-  <div class="stat"><div class="stat-label">Por cobrar</div><div class="stat-val red" id="st-porcobrar">$0</div></div>
+<div class="stats" style="grid-template-columns:repeat(3,1fr)">
+  <div class="stat"><div class="stat-label" translate="no">Total registros</div><div class="stat-val" id="st-total">0</div></div>
+  <div class="stat"><div class="stat-label" translate="no">Por entregar</div><div class="stat-val" id="st-pend">0</div></div>
+  <div class="stat"><div class="stat-label" translate="no">Cobrado total</div><div class="stat-val grn" id="st-cobrado">$0</div></div>
+</div>
+<div class="stats" id="stats-mes" style="grid-template-columns:repeat(3,1fr);margin-top:-5px">
+  <div class="stat" style="border-top:3px solid #7c3aed">
+    <div class="stat-label" id="st-mes-label">Cobrado del mes</div>
+    <div class="stat-val grn" id="st-mes-cobrado">$0</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:3px" id="st-mes-sub">— pedidos pagados</div>
+  </div>
+  <div class="stat" style="border-top:3px solid #dc2626">
+    <div class="stat-label" id="st-mes-pend-label">Por cobrar del mes</div>
+    <div class="stat-val red" id="st-mes-porcobrar">$0</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:3px" id="st-mes-pend-sub">— pedidos pendientes</div>
+  </div>
+  <div class="stat" style="border-top:3px solid #f59e0b">
+    <div class="stat-label" id="st-mes-total-label">Total facturado del mes</div>
+    <div class="stat-val" style="color:#f59e0b" id="st-mes-total">$0</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:3px" id="st-mes-total-sub">— pedidos en el mes</div>
+  </div>
 </div>
 
 <div class="pizarra-tabs">
@@ -608,9 +625,50 @@ function updateStats(){
   document.getElementById('st-total').textContent=pedidos.length;
   document.getElementById('st-pend').textContent=pedidos.filter(p=>!p.estados.includes('entregado')).length;
   document.getElementById('st-cobrado').textContent=fmt(pedidos.reduce((a,p)=>a+calcCobrado(p),0));
-  document.getElementById('st-porcobrar').textContent=fmt(pedidos.reduce((a,p)=>a+Math.max(0,(Number(p.total)||0)-calcCobrado(p)),0));
   document.getElementById('subtitle').textContent=`${pedidos.length} registro${pedidos.length!==1?'s':''}`;
+
+  // Stats por mes seleccionado
+  var mes=document.getElementById('f-mes').value;
+  var anio=document.getElementById('f-anio').value;
+  var now=new Date();
+  var mLabel=mes&&anio?getNombreMes(mes)+' '+anio:(getNombreMes(String(now.getMonth()+1))+' '+now.getFullYear());
+  
+  // Filtrar pedidos del mes
+  var pedidosMes=pedidos.filter(function(p){
+    var fr=p.tipo==='cita'?p.fechaCita:p.fecha;
+    if(!fr)return false;
+    var parts=fr.split('-');
+    var py=parts[0],pm=parts[1];
+    var mesOk=!mes||pm===mes.padStart(2,'0');
+    var anioOk=!anio||py===anio;
+    return mesOk&&anioOk;
+  });
+
+  var cobradoMes=pedidosMes.reduce(function(a,p){return a+calcCobrado(p);},0);
+  var porCobrarMes=pedidosMes.reduce(function(a,p){return a+Math.max(0,(Number(p.total)||0)-calcCobrado(p));},0);
+  var totalMes=pedidosMes.reduce(function(a,p){return a+(Number(p.total)||0);},0);
+  var pagadosMes=pedidosMes.filter(function(p){return p.estados.includes('pagado');}).length;
+  var pendMes=pedidosMes.filter(function(p){return !p.estados.includes('pagado');}).length;
+
+  document.getElementById('st-mes-label').textContent='Cobrado — '+mLabel;
+  document.getElementById('st-mes-label').setAttribute('translate','no');
+  document.getElementById('st-mes-pend-label').setAttribute('translate','no');
+  document.getElementById('st-mes-total-label').setAttribute('translate','no');
+  document.getElementById('st-mes-sub').setAttribute('translate','no');
+  document.getElementById('st-mes-pend-sub').setAttribute('translate','no');
+  document.getElementById('st-mes-total-sub').setAttribute('translate','no');
+  document.getElementById('st-mes-cobrado').textContent=fmt(cobradoMes);
+  document.getElementById('st-mes-sub').textContent=pagadosMes+' pedido'+(pagadosMes!==1?'s':'')+' pagado'+(pagadosMes!==1?'s':'');
+  document.getElementById('st-mes-pend-label').textContent='Por cobrar — '+mLabel;
+  document.getElementById('st-mes-porcobrar').textContent=fmt(porCobrarMes);
+  document.getElementById('st-mes-pend-sub').textContent=pendMes+' pedido'+(pendMes!==1?'s':'')+' pendiente'+(pendMes!==1?'s':'');
+  document.getElementById('st-mes-total-label').textContent='Total facturado — '+mLabel;
+  document.getElementById('st-mes-total').textContent=fmt(totalMes);
+  document.getElementById('st-mes-total-sub').textContent=pedidosMes.length+' pedido'+(pedidosMes.length!==1?'s':'')+' en el mes';
 }
+
+var MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function getNombreMes(m){return MESES[parseInt(m)]||'';}
 
 function buildPopupList(pid){
   const p=pedidos.find(x=>x.id===pid);if(!p)return;
