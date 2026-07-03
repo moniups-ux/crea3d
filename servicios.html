@@ -766,10 +766,11 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
             <tr>
               <th>ID</th>
               <th>Cliente</th>
-              <th>Descripción</th>
-              <th>Tipo Servicio / Pieza</th>
-              <th>Tipo de Material</th>
-              <th>Tiempo (h)</th>
+              <th style="min-width:180px">Descripción</th>
+              <th>Tipo Servicio</th>
+              <th>Tipo de Pieza</th>
+              <th>Material</th>
+              <th>Tiempo</th>
               <th>Anticipo</th>
               <th>Total / Saldo</th>
               <th>Imagen</th>
@@ -2233,8 +2234,9 @@ function renderServicios() {
         ${s.fecha ? `<br><span style="font-size:10px;color:var(--muted)">${fmtDate(s.fecha)}</span>` : ''}
         ${s.fechaEntrega ? `<br><span style="font-size:10px;color:var(--accent2)">📦 ${fmtDate(s.fechaEntrega)}</span>` : ''}
       </td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.descripcion||'—'}</td>
-      <td>${tipoBadge(s.tipoServicio)}<br><span style="font-size:10px;color:var(--accent2)">${s.tipoPieza||''}</span></td>
+      <td style="min-width:180px;max-width:220px;white-space:normal;line-height:1.4;font-size:12px">${s.descripcion||'—'}</td>
+      <td>${tipoBadge(s.tipoServicio)}</td>
+      <td style="font-size:12px;color:var(--accent2);font-weight:500">${s.tipoPieza||'—'}</td>
       <td style="color:var(--accent3)">${s.material||'—'}</td>
       <td style="color:var(--muted)">${s.tiempo||0}h</td>
       <td style="color:var(--warning)">$${fmt(s.anticipo)}</td>
