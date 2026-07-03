@@ -771,6 +771,8 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
             <tr>
               <th>ID</th>
               <th>Cliente</th>
+              <th>Fecha de Pedido</th>
+              <th>Fecha de Entrega</th>
               <th style="min-width:180px">Descripción</th>
               <th>Tipo Servicio</th>
               <th>Tipo de Pieza</th>
@@ -861,6 +863,7 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
             <tr>
               <th>Folio</th>
               <th>Fecha</th>
+              <th>Fecha de Entrega</th>
               <th>Cliente</th>
               <th>Marca / Modelo</th>
               <th>Motivo</th>
@@ -2258,23 +2261,24 @@ function renderServicios() {
       <td>
         <strong>${s.cliente||'—'}</strong>
         ${s.telefono ? `<br><span style="font-size:11px;color:var(--muted)">${s.telefono}</span>` : ''}
-        ${s.fecha ? `<br><span style="font-size:10px;color:var(--muted)">${fmtDate(s.fecha)}</span>` : ''}
-        ${s.fechaEntrega ? `<br><span style="font-size:10px;color:var(--accent2)">📦 ${fmtDate(s.fechaEntrega)}</span>` : ''}
       </td>
+      <td style="color:var(--muted)">${s.fecha ? fmtDate(s.fecha) : '—'}</td>
+      <td style="color:var(--accent2)">${s.fechaEntrega ? fmtDate(s.fechaEntrega) : '—'}</td>
       <td style="min-width:180px;max-width:220px;white-space:normal;line-height:1.4;font-size:12px">${s.descripcion||'—'}</td>
       <td>${tipoBadge(s.tipoServicio)}</td>
       <td style="font-size:12px;color:var(--accent2);font-weight:500">${s.tipoPieza||'—'}</td>
       <td style="color:var(--accent3)">${s.material||'—'}</td>
       <td style="color:var(--muted)">${s.tiempo||0}h</td>
-      <td style="color:var(--warning)">$${fmt(s.anticipo)}</td>
+      <td style="color:${s.estado==='Completado' ? 'var(--success)' : 'var(--warning)'}">${s.estado==='Completado' ? 'Pagado' : '$'+fmt(s.anticipo)}</td>
       <td>
         <div style="font-size:14px;font-weight:700;color:var(--success)">Total: $${fmt(s.precioTotal||((s.costoDiseno||0)+(s.costoImpresion||0)))}</div>
-        <div style="font-size:14px;font-weight:700;color:var(--accent)">Saldo: $${fmt(s.precio)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent)">Saldo: $${s.estado==='Completado' ? fmt(0) : fmt(s.precio)}</div>
       </td>
       <td>${imgHtml}</td>
       <td><span class="badge badge-${stateCls}">${s.estado}</span></td>
-      <td><div style="display:flex;gap:4px">
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="editServicio(${realIdx})">✎</button>
+        <button class="btn btn-success btn-sm" onclick="exportNotaServicioPDF(${realIdx})">🖨 PDF</button>
         <button class="btn btn-danger btn-sm" onclick="deleteServicio(${realIdx})">✕</button>
       </div></td>
     </tr>`;
@@ -2731,7 +2735,8 @@ function renderMantenimiento() {
     const cls = stColors[m.estado] || 'pending';
     return `<tr>
       <td style="color:var(--accent);font-weight:600;font-size:11px">${m.id||'—'}</td>
-      <td style="color:var(--muted)">${fmtDate(m.fecha)} ${m.hora||''}<br>${m.fechaEntrega?`<span style="font-size:10px;color:var(--accent2)">📦 ${fmtDate(m.fechaEntrega)}</span>`:''}</td>
+      <td style="color:var(--muted)">${fmtDate(m.fecha)} ${m.hora||''}</td>
+      <td style="color:var(--accent2)">${m.fechaEntrega ? fmtDate(m.fechaEntrega) : '—'}</td>
       <td><strong>${m.cliente}</strong><br><span style="font-size:11px;color:var(--muted)">${m.telefono||''}</span></td>
       <td>${m.marca||'—'} ${m.modelo||''}<br><span style="font-size:11px;color:var(--muted)">${m.tecnologia||''}</span></td>
       <td style="font-size:11px">${(m.motivos||[]).join(', ')||'—'}</td>
@@ -3092,6 +3097,202 @@ function exportNotaPDF(i) {
   doc.text('Crea3D Cancún  ·  www.crea3dcancun.com  ·  Folio: '+(m.id||''), pw/2, ph-4, {align:'center'});
 
   doc.save('Nota_Recepcion_'+(m.id||'')+'_'+(m.cliente||'').replace(/\s+/g,'_')+'.pdf');
+}
+
+// ===================== PDF NOTA DE SERVICIO =====================
+function exportNotaServicioPDF(i) {
+  const s = DB.servicios[i];
+  if(!window.jspdf){ alert('Cargando PDF...'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  let y = 0;
+
+  const C = {
+    purple:    [45, 27, 105],
+    purpleMid: [76, 29, 149],
+    purpleLight:[124, 58, 237],
+    lavender:  [196, 181, 253],
+    white:     [255, 255, 255],
+    offWhite:  [240, 238, 255],
+    gray:      [156, 163, 175],
+    darkText:  [26, 26, 46],
+    rowAlt:    [245, 243, 255],
+    success:   [5, 150, 105],
+    warning:   [217, 119, 6],
+    border:    [224, 216, 255],
+  };
+
+  // ── HEADER ──────────────────────────────────────────────
+  doc.setFillColor(...C.purple);
+  doc.rect(0, 0, pw, 35, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...C.white);
+  doc.text('Crea3D', 12, 16);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.lavender);
+  doc.text('Cancún  ·  Sm 221 MZA 22 lote 13, calle 86', 12, 22);
+  doc.text('(+52) 9984 011314  ·  www.crea3dcancun.com', 12, 27);
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...C.white);
+  doc.text('NOTA DE SERVICIO', pw-12, 14, {align:'right'});
+  doc.setFontSize(10); doc.setTextColor(...C.lavender);
+  doc.text('Folio: ' + (s.id||'—'), pw-12, 21, {align:'right'});
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('Fecha: '+fmtD_PDF(s.fecha), pw-12, 27, {align:'right'});
+  if(s.fechaEntrega) {
+    doc.setTextColor(...C.offWhite);
+    doc.text('Entrega estimada: '+fmtD_PDF(s.fechaEntrega), pw-12, 32, {align:'right'});
+  }
+  y = 40;
+
+  // ── Helpers ─────────────────────────────────────────────
+  const checkPage = (need=15) => {
+    if(y + need > ph - 15) {
+      doc.addPage();
+      doc.setFillColor(...C.purple);
+      doc.rect(0,0,pw,10,'F');
+      doc.setTextColor(...C.lavender);
+      doc.setFontSize(7);
+      doc.setFont('helvetica','normal');
+      doc.text('Crea3D Cancún  ·  Nota de Servicio: '+(s.id||''), pw/2, 7, {align:'center'});
+      y = 16;
+    }
+  };
+
+  const secTitle = (title) => {
+    checkPage(14);
+    doc.setFillColor(...C.purpleMid);
+    doc.roundedRect(10, y, pw-20, 8, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...C.white);
+    doc.text(title.toUpperCase(), 15, y+5.5);
+    y += 12;
+  };
+
+  const field = (label, value, x1=13, x2=52, maxW=135) => {
+    checkPage(7);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C.purpleLight);
+    doc.text(label+':', x1, y);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(...C.darkText);
+    const lines = doc.splitTextToSize(value||'—', maxW);
+    doc.text(lines, x2, y);
+    y += lines.length * 5;
+  };
+
+  const twoField = (l1, v1, l2, v2) => {
+    checkPage(7);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.purpleLight);
+    doc.text(l1+':', 13, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...C.darkText);
+    doc.text(v1||'—', 45, y);
+    doc.setFont('helvetica','bold'); doc.setTextColor(...C.purpleLight);
+    doc.text(l2+':', pw/2+5, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...C.darkText);
+    doc.text(v2||'—', pw/2+28, y);
+    y += 5.5;
+  };
+
+  // ── DATOS CLIENTE ────────────────────────────────────────
+  secTitle('Datos del Cliente');
+  field('Nombre', s.cliente, 13, 40);
+  field('Teléfono', s.telefono, 13, 40);
+  y += 3;
+
+  // ── DETALLES DEL SERVICIO ────────────────────────────────
+  secTitle('Detalles del Servicio');
+  twoField('Tipo de Servicio', s.tipoServicio, 'Tipo de Pieza', s.tipoPieza);
+  twoField('Material', s.material, 'Tiempo Estimado', s.tiempo ? s.tiempo+'h' : '—');
+  y += 2;
+
+  // ── DESCRIPCIÓN ───────────────────────────────────────────
+  secTitle('Descripción del Trabajo');
+  checkPage(20);
+  doc.setFillColor(...C.rowAlt);
+  doc.roundedRect(12, y-2, pw-24, 18, 2, 2, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.darkText);
+  const descLines = doc.splitTextToSize(s.descripcion||'—', pw-32);
+  doc.text(descLines, 16, y+4);
+  y += 24;
+
+  // ── IMAGEN DE REFERENCIA (si existe) ─────────────────────
+  if (s.imagen) {
+    try {
+      checkPage(65);
+      secTitle('Imagen de Referencia');
+      const fmtMatch = /data:image\/(png|jpe?g)/i.exec(s.imagen);
+      const imgFormat = fmtMatch ? fmtMatch[1].toUpperCase().replace('JPG','JPEG') : 'PNG';
+      doc.addImage(s.imagen, imgFormat, 13, y, 55, 55);
+      y += 60;
+    } catch(e) { /* imagen inválida: se omite sin interrumpir el PDF */ }
+  }
+
+  // ── COSTOS ───────────────────────────────────────────────
+  secTitle('Costos del Servicio');
+  const esCompletado = s.estado === 'Completado';
+  if (esCompletado) {
+    checkPage(26);
+    doc.setFillColor(...C.rowAlt);
+    doc.roundedRect(12, y-2, pw-24, 24, 2, 2, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.purpleLight);
+    doc.text('Total a Pagar:', 16, y+6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...C.purple);
+    doc.text('$'+Math.round(s.precioTotal||0).toLocaleString('es-MX'), 90, y+6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(220,38,38);
+    doc.text('PAGADO', pw/2, y+18, {align:'center'});
+    y += 30;
+  } else {
+    checkPage(30);
+    doc.setFillColor(...C.rowAlt);
+    doc.roundedRect(12, y-2, pw-24, 28, 2, 2, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.purpleLight);
+    doc.text('Total a Pagar:', 16, y+6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...C.purple);
+    doc.text('$'+Math.round(s.precioTotal||0).toLocaleString('es-MX'), 90, y+6);
+    let ly = y+14;
+    if (s.anticipo) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
+      doc.text('Anticipo:', 16, ly);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...C.success);
+      doc.text('$'+Math.round(s.anticipo||0).toLocaleString('es-MX'), 90, ly);
+      ly += 7;
+    }
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
+    doc.text('Saldo a Pagar:', 16, ly);
+    doc.setFont('helvetica','bold'); doc.setTextColor(...C.warning);
+    doc.text('$'+Math.round(s.precio||0).toLocaleString('es-MX'), 90, ly);
+    y += 34;
+  }
+
+  // ── ESTADO ───────────────────────────────────────────────
+  secTitle('Estado del Servicio');
+  checkPage(10);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...C.purple);
+  doc.text(s.estado||'—', 16, y+3);
+  y += 12;
+
+  // ── FIRMAS ───────────────────────────────────────────────
+  checkPage(35);
+  y += 5;
+  doc.setDrawColor(...C.border);
+  doc.line(20, y+20, 85, y+20);
+  doc.line(pw-85, y+20, pw-20, y+20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.gray);
+  doc.text('Firma del Cliente', 52, y+25, {align:'center'});
+  doc.text('Recibido por Crea3D', pw-52, y+25, {align:'center'});
+  doc.text(s.cliente||'', 52, y+30, {align:'center'});
+  y += 35;
+
+  // ── FOOTER ───────────────────────────────────────────────
+  doc.setFillColor(...C.purple);
+  doc.rect(0, ph-10, pw, 10, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.lavender);
+  doc.text('Crea3D Cancún  ·  www.crea3dcancun.com  ·  Folio: '+(s.id||''), pw/2, ph-4, {align:'center'});
+
+  doc.save('Nota_Servicio_'+(s.id||'')+'_'+(s.cliente||'').replace(/\s+/g,'_')+'.pdf');
 }
 
 
