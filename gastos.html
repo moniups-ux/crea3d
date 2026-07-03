@@ -628,7 +628,7 @@ function rHist(){
       if(e.cat===MAT_CAT&&e.qty!=null)ex=`<div style="font-size:10px;color:var(--ink3);font-family:var(--mono)">${e.qty} × ${fd(e.uP)}</div>`;
       else if(e.cat===DIS_CAT&&e.nDis)ex=`<div style="font-size:10px;font-weight:500;color:var(--ink2)">Diseñador: ${esc(e.nDis)}${e.fEntrega?' · Entrega: '+ff(e.fEntrega):''}</div>`;
       const thumb=e.imgD?`<img src="${e.imgD}" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;cursor:pointer;border:0.5px solid var(--border)" onclick="openLb('${e.imgD}')" alt="diseño">`:'';
-      return`<div class="hist-item"><span class="cat-dot" style="background:${CC[e.cat]||'#888'};margin-top:4px"></span><div style="flex:1;font-size:13px;font-weight:500;color:var(--ink)">${esc(e.desc)}${fStr}${ex}</div><span style="font-size:11px;color:var(--ink3);min-width:95px">${e.cat}</span>${thumb}${badge}<span style="font-family:var(--mono);font-size:13px;min-width:72px;text-align:right">${fd(e.amount)}</span></div>`;
+      return`<div class="hist-item"><span class="cat-dot" style="background:${CC[e.cat]||'#888'};margin-top:4px"></span><div style="flex:1;font-size:13px;font-weight:500;color:var(--ink)">${esc(e.desc)}${fStr}${ex}</div><span style="font-size:11px;color:var(--ink3);min-width:95px">${e.cat}</span>${thumb}${badge}<span style="font-family:var(--mono);font-size:13px;min-width:72px;text-align:right">${fd(e.amount)}</span><div style="display:flex;gap:4px;margin-left:8px;flex-shrink:0"><button onclick="histEditExp('${k}','${e.id}')" style="background:#ede9fe;color:#7c3aed;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-weight:600">Editar</button><button onclick="histDelExp('${k}','${e.id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-weight:600">Eliminar</button></div></div>`;
     }).join('');
     return`<div class="hist-block" id="hist-block-${y}-${m}"><div class="hist-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><div><span class="hist-title">${MN[m]} ${y}</span><span style="font-size:11px;color:var(--ink3);margin-left:8px">${list.length} registros</span></div><span class="hist-total">${fmt(tot)}</span></div><div class="hist-body" style="display:none">${rows}</div></div>`;
   }).join('');
@@ -711,6 +711,27 @@ render();
 // ── Firebase sync ────────────────────────────────────────────
 var ind=document.getElementById('fb-ind');
 function _showFB(msg,c){ind.textContent=msg;ind.style.background=c||'#059669';ind.style.color='#fff';ind.style.opacity='1';clearTimeout(ind._t);ind._t=setTimeout(function(){ind.style.opacity='0'},3000);}
+
+// Eliminar desde historial
+function histDelExp(key, id){
+  if(!confirm('Eliminar este registro?')) return;
+  EX[key] = (EX[key]||[]).filter(function(e){ return String(e.id) !== String(id); });
+  sv();
+  rHist();
+}
+
+// Editar desde historial — navega al mes y abre el editor
+function histEditExp(key, id){
+  var parts = key.split('-');
+  var y = parseInt(parts[0]), m = parseInt(parts[1])-1;
+  cY = y; cM = m;
+  swTab('mes');
+  render();
+  // Esperar render y luego abrir edicion
+  setTimeout(function(){
+    editExp(Number(id));
+  }, 200);
+}
 
 // Override sv() para guardar en Firebase
 var _origSv=window.sv;
