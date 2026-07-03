@@ -685,6 +685,7 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
 .section-tabs{background:#2d1b69!important;border-bottom:1px solid rgba(124,58,237,.3)!important}
 .section-tab.active{border-bottom-color:#7c3aed!important;color:#fff!important}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div id="fb-ind"></div>
@@ -710,6 +711,10 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
         <div class="page-subtitle">Trabajos de impresión 3D por encargo</div>
       </div>
       <button class="btn btn-primary" onclick="openModal('modal-servicio')">+ Nuevo Servicio</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="exportServiciosPDF('mes')" style="font-size:12px;padding:7px 12px">📄 PDF del Mes</button>
+        <button class="btn btn-secondary" onclick="exportServiciosPDF('todos')" style="font-size:12px;padding:7px 12px">📊 PDF General</button>
+      </div>
     </div>
 
     <!-- Filtro por mes -->
@@ -793,6 +798,10 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
         <div class="page-subtitle">Notas de recepción de impresoras</div>
       </div>
       <button class="btn btn-primary" onclick="openMantModal()">+ Nueva Nota de Recepción</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="exportMantPDF('mes')" style="font-size:12px;padding:7px 12px">📄 PDF del Mes</button>
+        <button class="btn btn-secondary" onclick="exportMantPDF('todos')" style="font-size:12px;padding:7px 12px">📊 PDF General</button>
+      </div>
     </div>
 
     <!-- Stats mantenimiento -->
