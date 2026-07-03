@@ -710,10 +710,10 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
         <div class="page-title">Servicios</div>
         <div class="page-subtitle">Trabajos de impresión 3D por encargo</div>
       </div>
-      <button class="btn btn-primary" onclick="openModal('modal-servicio')">+ Nuevo Servicio</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="exportServiciosPDF('mes')" style="font-size:12px;padding:7px 12px">📄 PDF del Mes</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportServiciosPDF('mes')" style="font-size:12px;padding:7px 12px">📄 PDF Mes</button>
         <button class="btn btn-secondary" onclick="exportServiciosPDF('todos')" style="font-size:12px;padding:7px 12px">📊 PDF General</button>
+        <button class="btn btn-primary" onclick="openModal('modal-servicio')">+ Nuevo Servicio</button>
       </div>
     </div>
 
@@ -797,10 +797,10 @@ input:focus,select:focus,textarea:focus{border-color:#7c3aed!important}
         <div class="page-title">Mantenimiento y Reparación</div>
         <div class="page-subtitle">Notas de recepción de impresoras</div>
       </div>
-      <button class="btn btn-primary" onclick="openMantModal()">+ Nueva Nota de Recepción</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="exportMantPDF('mes')" style="font-size:12px;padding:7px 12px">📄 PDF del Mes</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportMantPDF('mes')" style="font-size:12px;padding:7px 12px">📄 PDF Mes</button>
         <button class="btn btn-secondary" onclick="exportMantPDF('todos')" style="font-size:12px;padding:7px 12px">📊 PDF General</button>
+        <button class="btn btn-primary" onclick="openMantModal()">+ Nueva Nota</button>
       </div>
     </div>
 
