@@ -1289,20 +1289,22 @@ function refreshPage(name) {
 // ===================== MODALS =====================
 function openModal(id) {
   if(id === 'modal-servicio') {
-    const editIdx = document.getElementById('serv-edit-idx')?.value;
-    if(editIdx === '-1' || !editIdx) {
+    const editIdx = parseInt(document.getElementById('serv-edit-idx')?.value||'-1');
+    if(editIdx === -1) {
+      // Nuevo registro: seleccionar Diseño+Impresión
       const ambos = document.getElementById('serv-tipo-ambos');
-      if(ambos) ambos.checked = true;
+      if(ambos) { ambos.checked = true; }
       const fe = document.getElementById('serv-fecha-entrega');
       if(fe) fe.value = '';
     }
+    // Forzar actualización de campos de costo
     setTimeout(function(){
-      if(typeof updateServTipo==='function') updateServTipo();
       const dg=document.getElementById('serv-costo-diseno-group');
       const ig=document.getElementById('serv-costo-impresion-group');
       if(dg) dg.style.display='';
       if(ig) ig.style.display='';
-    }, 50);
+      if(typeof updateServTipo==='function') updateServTipo();
+    }, 100);
   }
   if (id === 'modal-movimiento') populateMovimientoSelect();
   if (id === 'modal-venta') populateVentaSelect();
@@ -2187,20 +2189,26 @@ function renderServicios() {
     });
   }
 
-  // Stats de ganancias
-  var _now=new Date(),_cm=_now.getMonth()+1,_cy=_now.getFullYear();
+  // Stats de ganancias — usa el mes/año del filtro seleccionado
+  var _mn=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var _now=new Date();
+  var _selMes=parseInt(document.getElementById('serv-filtro-mes')?.value||'0')||(_now.getMonth()+1);
+  var _selAnio=parseInt(document.getElementById('serv-filtro-anio')?.value||'0')||_now.getFullYear();
   var _comp=DB.servicios.filter(function(s){return s.estado==='Completado';});
   var _totG=_comp.reduce(function(a,s){return a+(s.precioTotal||0);},0);
-  var _mesC=_comp.filter(function(s){if(!s.fecha)return false;var p=s.fecha.split('-');return parseInt(p[1])===_cm&&parseInt(p[0])===_cy;});
+  var _mesC=_comp.filter(function(s){
+    if(!s.fecha)return false;
+    var p=s.fecha.split('-');
+    return parseInt(p[1])===_selMes && parseInt(p[0])===_selAnio;
+  });
   var _mesG=_mesC.reduce(function(a,s){return a+(s.precioTotal||0);},0);
   var _pend=DB.servicios.filter(function(s){return s.estado!=='Completado';});
   var _porC=_pend.reduce(function(a,s){return a+(s.precio||0);},0);
-  var _mn=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var _et=document.getElementById('serv-stat-total');
   var _em=document.getElementById('serv-stat-mes');
   var _ep=document.getElementById('serv-stat-pendiente');
   if(_et){_et.textContent='$'+Math.round(_totG).toLocaleString('es-MX');document.getElementById('serv-stat-total-sub').textContent=_comp.length+' completado'+(_comp.length!==1?'s':'');}
-  if(_em){_em.textContent='$'+Math.round(_mesG).toLocaleString('es-MX');document.getElementById('serv-stat-mes-label').textContent='Ganancia — '+_mn[_cm]+' '+_cy;document.getElementById('serv-stat-mes-sub').textContent=_mesC.length+' completado'+(_mesC.length!==1?'s':'');}
+  if(_em){_em.textContent='$'+Math.round(_mesG).toLocaleString('es-MX');document.getElementById('serv-stat-mes-label').textContent='Ganancia — '+_mn[_selMes]+' '+_selAnio;document.getElementById('serv-stat-mes-sub').textContent=_mesC.length+' completado'+(_mesC.length!==1?'s':'');}
   if(_ep){_ep.textContent='$'+Math.round(_porC).toLocaleString('es-MX');document.getElementById('serv-stat-pendiente-sub').textContent=_pend.length+' activo'+(_pend.length!==1?'s':'');}
 
   const tbody = document.getElementById('tbody-servicios');
@@ -2664,14 +2672,16 @@ function renderMantenimiento() {
   }
 
   // Stats de mantenimiento
-  var _mn2=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var _now2=new Date(),_cm2=_now2.getMonth()+1,_cy2=_now2.getFullYear();
+  var _mn2=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var _now2=new Date();
+  var _selMes2=parseInt(document.getElementById('mant-filtro-mes')?.value||'0')||(_now2.getMonth()+1);
+  var _selAnio2=parseInt(document.getElementById('mant-filtro-anio')?.value||'0')||_now2.getFullYear();
   var _entregados=DB.mantenimiento.filter(function(m){return m.estado==='Entregado';});
   var _totM=_entregados.reduce(function(a,m){return a+(parseFloat(m.costoTotal)||0);},0);
   var _mesEnt=_entregados.filter(function(m){
     if(!m.fecha)return false;
     var p=m.fecha.split('-');
-    return parseInt(p[1])===_cm2&&parseInt(p[0])===_cy2;
+    return parseInt(p[1])===_selMes2 && parseInt(p[0])===_selAnio2;
   });
   var _mesM=_mesEnt.reduce(function(a,m){return a+(parseFloat(m.costoTotal)||0);},0);
   var _proc=DB.mantenimiento.filter(function(m){return m.estado!=='Entregado';});
@@ -2680,7 +2690,7 @@ function renderMantenimiento() {
   var _em2=document.getElementById('mant-stat-mes');
   var _ep2=document.getElementById('mant-stat-proceso');
   if(_et2){_et2.textContent='$'+Math.round(_totM).toLocaleString('es-MX');document.getElementById('mant-stat-total-sub').textContent=_entregados.length+' entregado'+(_entregados.length!==1?'s':'');}
-  if(_em2){_em2.textContent='$'+Math.round(_mesM).toLocaleString('es-MX');document.getElementById('mant-stat-mes-label').textContent='Generado — '+_mn2[_cm2]+' '+_cy2;document.getElementById('mant-stat-mes-sub').textContent=_mesEnt.length+' entregado'+(_mesEnt.length!==1?'s':'');}
+  if(_em2){_em2.textContent='$'+Math.round(_mesM).toLocaleString('es-MX');document.getElementById('mant-stat-mes-label').textContent='Generado — '+_mn2[_selMes2]+' '+_selAnio2;document.getElementById('mant-stat-mes-sub').textContent=_mesEnt.length+' entregado'+(_mesEnt.length!==1?'s':'');}
   if(_ep2){_ep2.textContent='$'+Math.round(_procM).toLocaleString('es-MX');document.getElementById('mant-stat-proceso-sub').textContent=_proc.length+' en proceso';}
 
   const tbody = document.getElementById('tbody-mantenimiento');
