@@ -1092,9 +1092,8 @@ render();
         if(data && data.EX){
           EX = data.EX;
           // Re-render
-          if(typeof render === 'function') render();
-          else if(typeof renderAll === 'function') renderAll();
-          else if(typeof goToCurrentMonth === 'function') goToCurrentMonth();
+          if(typeof goToCurrentMonth === 'function') goToCurrentMonth();
+          else if(typeof render === 'function') render();
           showInd('☁️ Datos cargados');
         }
       } else {
@@ -1121,7 +1120,13 @@ render();
 
   // Cargar al iniciar
   document.addEventListener('DOMContentLoaded', ()=>{
-    setTimeout(fbLoad, 800); // Esperar que el script original termine de iniciar
+    // Primero renderizar con datos locales (si hay)
+    if(typeof goToCurrentMonth === 'function') goToCurrentMonth();
+    // Luego cargar desde Firebase y re-renderizar
+    setTimeout(async ()=>{
+      await fbLoad();
+      if(typeof goToCurrentMonth === 'function') goToCurrentMonth();
+    }, 1000);
   });
 
 })();
