@@ -520,6 +520,15 @@ input:focus, select:focus, textarea:focus {
                 </div>
               </div>
             </div>
+            <div class="row2">
+              <div class="fg">
+                <label class="yellow-label">Costo STL / Diseño</label>
+                <div class="input-u">
+                  <input type="number" id="f-stl" value="0" min="0" step="10" class="yellow-input" oninput="calcular()">
+                  <span class="iu">$</span>
+                </div>
+              </div>
+            </div>
 
             <div class="fg" style="max-width:180px; margin-top:10px">
               <label>Cantidad de piezas</label>
@@ -910,6 +919,7 @@ function calcular() {
   const cLabor    = (laborMin / 60) * cfg.labor * qty;
   const cEnergy   = printHr * powerKw * cfg.elec * qty;
   const cMaterial = grams * (matKg / 1000) * qty;
+  const cStl      = parseFloat(document.getElementById('f-stl').value) || 0;
   const cDepr     = printHr * deprRate * qty;
   const cWaste    = cMaterial * (cfg.waste / 100);
 
@@ -922,14 +932,15 @@ function calcular() {
     cDesign = dh * cfg.designHour * dc;
   }
 
-  const subtotal1   = cLabor + cEnergy + cMaterial + cDepr + cWaste + cDesign + cPost;
+  // Diseño, Postprocesado y Color se cobran "a costo": no llevan riesgo ni margen de ganancia.
+  const subtotal1   = cLabor + cEnergy + cMaterial + cStl + cDepr + cWaste;
   const cRisk       = subtotal1 * (cfg.risk / 100);
   const totalGastos = subtotal1 + cRisk;
 
   const cColor   = colorExtra * qty;
   const cProfit  = totalGastos * (cfg.profit / 100);
 
-  let total = totalGastos + cColor + cShip + cProfit;
+  let total = totalGastos + cColor + cDesign + cPost + cShip + cProfit;
 
   // Urgency surcharge
   const urgencyPct = parseFloat(document.getElementById('f-urgency').value) || 0;
@@ -958,7 +969,7 @@ function calcular() {
   set('r-labor',    cLabor);
   set('r-energy',   cEnergy);
   set('r-material', cMaterial);
-  set('r-stl',      0);
+  set('r-stl',      cStl);
   set('r-depr',     cDepr);
   set('r-waste',    cWaste);
   set('r-risk',     cRisk);
@@ -1011,7 +1022,7 @@ function calcular() {
   document.getElementById('dg-grams').textContent = (grams * qty).toFixed(0);
   document.getElementById('dg-gastos').textContent= fmt(totalGastos);
 
-  window._calc = { cLabor, cEnergy, cMaterial, cDepr, cWaste, cRisk, cDesign, cPost, cProfit, cShip, cColor, cUrgency, cDiscount, cIva, totalGastos, total, qty, printMin, kwhUsed, grams };
+  window._calc = { cLabor, cEnergy, cMaterial, cStl, cDepr, cWaste, cRisk, cDesign, cPost, cProfit, cShip, cColor, cUrgency, cDiscount, cIva, totalGastos, total, qty, printMin, kwhUsed, grams };
 }
 
 function fmt(n) {
@@ -1132,7 +1143,6 @@ function resetForm() {
   document.getElementById('f-matkg').value   = '250';
   document.getElementById('f-color').value   = '0';
   document.getElementById('f-stl').value     = '0';
-  document.getElementById('f-extras').value  = '0';
   document.getElementById('f-qty').value     = '1';
   document.getElementById('f-ship-type').value = '0';
   document.getElementById('f-urgency').value   = '0';
@@ -1156,35 +1166,5 @@ function printQuote() { window.print(); }
 // ==================== START ====================
 document.addEventListener('DOMContentLoaded', init);
 </script>
-
-<style>
-.btn-volver-menu {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  background: #2d1b69;
-  color: #fff;
-  border: none;
-  border-radius: 50px;
-  padding: 11px 18px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  box-shadow: 0 4px 16px rgba(45,27,105,.45);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  z-index: 9999;
-  text-decoration: none;
-  transition: all .2s;
-}
-.btn-volver-menu:hover {
-  background: #4c1d95;
-  transform: translateY(-2px);
-}
-</style>
-<a href="index.html" class="btn-volver-menu">🏠 Menú</a>
-
 </body>
 </html>
