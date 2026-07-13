@@ -189,6 +189,7 @@ tr:hover td{background:#faf8ff}
     </div>
   </div>
   <div class="top-btns">
+    <button class="btn-top" id="btn-notif" onclick="toggleNotifs()"><i class="ti ti-bell"></i> Activar avisos</button>
     <button class="btn-top" onclick="exportCSV()"><i class="ti ti-file-spreadsheet"></i> CSV</button>
     <button class="btn-top" onclick="imprimirPDF()"><i class="ti ti-printer"></i> Imprimir PDF</button>
     <button class="btn-new" onclick="openModal(null)"><i class="ti ti-plus"></i> Nuevo</button>
@@ -967,9 +968,16 @@ window.saveOrder = async function(){
     if(editId){
       const p = pedidos.find(x=>x.id===editId);
       if(p){
+        const nuevaFecha = document.getElementById('c-fecha').value;
+        const nuevaHora = document.getElementById('c-hora').value;
+        // Si cambia la fecha/hora de la cita, reactivamos los avisos pendientes
+        if(p.fechaCita !== nuevaFecha || p.horaCita !== nuevaHora){
+          p.notifDiaEnviado = false;
+          p.notif30Enviado = false;
+        }
         p.cliente = cl;
-        p.fechaCita = document.getElementById('c-fecha').value;
-        p.horaCita = document.getElementById('c-hora').value;
+        p.fechaCita = nuevaFecha;
+        p.horaCita = nuevaHora;
         p.nota = document.getElementById('c-nota').value;
         await fbSave(p);
       }
@@ -984,7 +992,9 @@ window.saveOrder = async function(){
         foto: '',
         estados: ['cita'],
         total: '',
-        anticipo: ''
+        anticipo: '',
+        notifDiaEnviado: false,
+        notif30Enviado: false
       };
       await fbSave(np);
     }
@@ -1043,6 +1053,95 @@ window.toggleEst = async function(pid, key){
 };
 
 console.log('🔥 Firebase Crea3D listo');
+
+// ── Avisos de citas (mientras la pizarra está abierta) ────────
+// Gratis, sin servidor: revisa las citas de hoy cada minuto y muestra
+// una notificación del navegador el día de la cita y 30 min antes.
+// Solo funciona si esta pestaña sigue abierta.
+
+function updateNotifBtn(on){
+  const b = document.getElementById('btn-notif');
+  if(!b) return;
+  if(on){
+    b.innerHTML = '<i class="ti ti-bell-check"></i> Avisos activados';
+    b.style.background = 'rgba(34,197,94,.4)';
+  } else {
+    b.innerHTML = '<i class="ti ti-bell"></i> Activar avisos';
+    b.style.background = '';
+  }
+}
+
+window.toggleNotifs = async function(){
+  if(!('Notification' in window)){ alert('Este navegador no soporta notificaciones.'); return; }
+  if(Notification.permission === 'granted'){
+    updateNotifBtn(true);
+    showFB('🔔 Avisos ya activados');
+    revisarCitas();
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted'){
+    updateNotifBtn(true);
+    showFB('🔔 Avisos activados');
+    revisarCitas();
+  } else {
+    showFB('Permiso de notificaciones denegado', '#dc2626');
+  }
+};
+
+function hoyStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function avisar(titulo, cuerpo){
+  if(Notification.permission !== 'granted') return;
+  try{ new Notification(titulo, { body: cuerpo }); } catch(e){ console.warn('No se pudo mostrar la notificación:', e); }
+}
+
+function revisarCitas(){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const hoy = hoyStr();
+  const ahora = new Date();
+  const nowMin = ahora.getHours()*60 + ahora.getMinutes();
+
+  pedidos.filter(p => p.tipo === 'cita' && p.fechaCita === hoy).forEach(p => {
+    const keyDia = `notifDia_${p.id}_${hoy}`;
+    const key30 = `notif30_${p.id}_${hoy}`;
+    const horaValida = p.horaCita && /^\d{1,2}:\d{2}$/.test(p.horaCita);
+    let citaMin = null;
+    if(horaValida){
+      const [hh, mm] = p.horaCita.split(':').map(Number);
+      citaMin = hh*60 + mm;
+    }
+
+    // Aviso del día — una vez, la primera vez que la pizarra está abierta ese día.
+    if(!localStorage.getItem(keyDia)){
+      const yaPaso = citaMin !== null && citaMin < nowMin;
+      if(!yaPaso){
+        avisar('📅 Cita hoy', `Hoy tienes una cita con ${p.cliente||'un cliente'}${horaValida?' a las '+fmtH(p.horaCita):''}.`);
+      }
+      localStorage.setItem(keyDia, '1');
+    }
+
+    // Aviso 30 minutos antes.
+    if(citaMin !== null && !localStorage.getItem(key30)){
+      const diff = citaMin - nowMin;
+      if(diff <= 30 && diff >= 0){
+        avisar('⏰ Cita en 30 minutos', `${p.cliente||'Cliente'} tiene cita a las ${fmtH(p.horaCita)}.`);
+        localStorage.setItem(key30, '1');
+      }
+    }
+  });
+}
+
+setInterval(revisarCitas, 60*1000);
+window.addEventListener('load', () => {
+  if('Notification' in window && Notification.permission === 'granted'){
+    updateNotifBtn(true);
+    revisarCitas();
+  }
+});
 </script>
 </body>
 </html>
