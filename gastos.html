@@ -691,15 +691,77 @@ function exportPDF(scope){
   const tot=src.reduce((s,e)=>s+e.amount,0),tCF=src.filter(e=>e.factura==='cf'||!e.factura).reduce((s,e)=>s+e.amount,0),tSF=src.filter(e=>e.factura==='sf').reduce((s,e)=>s+e.amount,0);
   doc.setFontSize(9);doc.setTextColor(60,60,60);doc.text(`Total: ${fd(tot)}     Con factura: ${fd(tCF)}     Sin factura: ${fd(tSF)}`,14,33);
   doc.setFontSize(8);doc.setTextColor(140,140,140);doc.text(`Registros: ${src.length}   |   Generado: ${new Date().toLocaleDateString('es-MX')}`,14,39);
-  let y=45;
-  src.forEach((e,i)=>{
-    if(y>245){doc.addPage();doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);doc.text(APP_TITLE+' — '+periodo+' (continuación)',14,12);doc.setDrawColor(220,220,216);doc.line(14,15,196,15);y=22;}
-    const row=[[e.mes||'',ff(e.fecha)||'',e.desc,e.nDis||'—',e.cat,(e.factura==='sf'?'SF':'CF'),'$'+e.amount.toLocaleString('es-MX',{minimumFractionDigits:2})]];
-    if(i===0)doc.autoTable({startY:y,head:[['Mes','Fecha','Descripción','Diseñador','Categoría','Fac.','Total']],body:row,styles:{fontSize:7,cellPadding:2.5},headStyles:{fillColor:[26,26,26],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[247,247,245]},didParseCell:d=>{if(d.column.index===5&&d.section==='body'){d.cell.styles.textColor=d.cell.raw==='CF'?[45,90,45]:[120,46,36];d.cell.styles.fontStyle='bold';}},columnStyles:{6:{halign:'right'}},margin:{left:14,right:14}});
-    else doc.autoTable({startY:doc.lastAutoTable.finalY,body:row,styles:{fontSize:7,cellPadding:2.5},alternateRowStyles:{fillColor:[247,247,245]},didParseCell:d=>{if(d.column.index===5&&d.section==='body'){d.cell.styles.textColor=d.cell.raw==='CF'?[45,90,45]:[120,46,36];d.cell.styles.fontStyle='bold';}},columnStyles:{6:{halign:'right'}},margin:{left:14,right:14}});
-    y=doc.lastAutoTable.finalY+2;
-    if(e.imgD&&e.cat===DIS_CAT){try{if(y>230){doc.addPage();y=20;}doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text(`Imagen — ${e.nDis||'Diseñador'}: ${e.desc}`,14,y+5);doc.addImage(e.imgD,'JPEG',14,y+8,80,50);y+=68;}catch(err){}}
+
+  // ── Agrupar por categoría ──────────────────────────────
+  const porCat={};
+  src.forEach(e=>{
+    const c=e.cat||'Sin categoría';
+    if(!porCat[c])porCat[c]={cf:0,sf:0,tot:0,items:[]};
+    const esSF=e.factura==='sf';
+    porCat[c][esSF?'sf':'cf']+=e.amount;
+    porCat[c].tot+=e.amount;
+    porCat[c].items.push(e);
   });
+  const catsOrdenadas=Object.keys(porCat).sort((a,b)=>porCat[b].tot-porCat[a].tot);
+
+  // ── Tabla resumen por categoría ─────────────────────────
+  let y=45;
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);doc.text('Resumen por categoría',14,y);
+  y+=4;
+  const resumenBody=catsOrdenadas.map(c=>[c,fd(porCat[c].cf),fd(porCat[c].sf),fd(porCat[c].tot)]);
+  resumenBody.push(['Total general',fd(tCF),fd(tSF),fd(tot)]);
+  doc.autoTable({
+    startY:y,
+    head:[['Categoría','Con factura','Sin factura','Total']],
+    body:resumenBody,
+    styles:{fontSize:8,cellPadding:3},
+    headStyles:{fillColor:[26,26,26],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[247,247,245]},
+    columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right',fontStyle:'bold'}},
+    didParseCell:d=>{if(d.row.index===resumenBody.length-1&&d.section==='body'){d.cell.styles.fillColor=[237,233,254];d.cell.styles.fontStyle='bold';}},
+    margin:{left:14,right:14}
+  });
+  y=doc.lastAutoTable.finalY+10;
+
+  // ── Detalle agrupado por categoría ──────────────────────
+  if(y>250){doc.addPage();y=20;}
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);doc.text('Detalle por categoría',14,y);
+  y+=6;
+
+  catsOrdenadas.forEach(cat=>{
+    const g=porCat[cat];
+    if(y>240){doc.addPage();doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);doc.text(APP_TITLE+' — '+periodo+' (continuación)',14,12);doc.setDrawColor(220,220,216);doc.line(14,15,196,15);y=22;}
+    doc.setFontSize(9.5);doc.setFont('helvetica','bold');doc.setTextColor(90,58,138);
+    doc.text(`${cat}  —  ${fd(g.tot)}  (CF: ${fd(g.cf)}  ·  SF: ${fd(g.sf)})`,14,y);
+    y+=5;
+    const rows=[...g.items].sort((a,b)=>{const fa=a.fecha||'',fb=b.fecha||'';return fa>fb?1:fa<fb?-1:0;}).map(e=>[e.mes||'',ff(e.fecha)||'',e.desc,e.nDis||'—',(e.factura==='sf'?'SF':'CF'),'$'+e.amount.toLocaleString('es-MX',{minimumFractionDigits:2})]);
+    doc.autoTable({
+      startY:y,
+      head:[['Mes','Fecha','Descripción','Diseñador','Fac.','Total']],
+      body:rows,
+      styles:{fontSize:7,cellPadding:2.5},
+      headStyles:{fillColor:[90,58,138],textColor:255,fontStyle:'bold'},
+      alternateRowStyles:{fillColor:[247,247,245]},
+      didParseCell:d=>{if(d.column.index===4&&d.section==='body'){d.cell.styles.textColor=d.cell.raw==='CF'?[45,90,45]:[120,46,36];d.cell.styles.fontStyle='bold';}},
+      columnStyles:{5:{halign:'right'}},
+      margin:{left:14,right:14}
+    });
+    y=doc.lastAutoTable.finalY+3;
+
+    g.items.forEach(e=>{
+      if(e.imgD&&e.cat===DIS_CAT){
+        try{
+          if(y>225){doc.addPage();y=20;}
+          doc.setFontSize(8);doc.setTextColor(120,120,120);
+          doc.text(`Imagen — ${e.nDis||'Diseñador'}: ${e.desc}`,14,y+5);
+          doc.addImage(e.imgD,'JPEG',14,y+8,80,50);
+          y+=68;
+        }catch(err){}
+      }
+    });
+    y+=6;
+  });
+
   const totalPages=doc.internal.getNumberOfPages();
   for(let p=1;p<=totalPages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(180,180,180);doc.text(`${APP_TITLE}  |  Página ${p} de ${totalPages}`,14,doc.internal.pageSize.height-8);}
   doc.save(scope==='mes'?`control_de_gastos_${MN[cM]}_${cY}.pdf`:`control_de_gastos_historial_${cY}.pdf`);
