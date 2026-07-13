@@ -456,7 +456,7 @@ function setEditUI(on){
   document.getElementById('edit-banner').classList.toggle('hidden',!on);
   document.querySelectorAll('.add-btn').forEach(b=>{b.textContent=on?'✓ Guardar cambios':'+ Agregar';});
 }
-function cancelEdit(){editId=null;editKey=null;setEditUI(false);resetFormFields();}
+function cancelEdit(){editId=null;editKey=null;setEditUI(false);resetFormFields();render();}
 
 function editExp(id){
   const list=EX[ky()]||[];
@@ -534,7 +534,7 @@ function delExp(id){
   sv();render();
 }
 function chgMonth(d){cM+=d;if(cM>11){cM=0;cY++;}if(cM<0){cM=11;cY--;}render();}
-function swTab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');['mes','busqueda','historial'].forEach(v=>document.getElementById('view-'+v).classList.toggle('view-hidden',t!==v));if(t==='historial')rHist();if(t==='busqueda')initBus();}
+function swTab(t,el){const tabs=document.querySelectorAll('.tab');tabs.forEach(x=>x.classList.remove('active'));const target=el||[...tabs].find(x=>(x.getAttribute('onclick')||'').includes("'"+t+"'"));if(target)target.classList.add('active');['mes','busqueda','historial'].forEach(v=>document.getElementById('view-'+v).classList.toggle('view-hidden',t!==v));if(t==='historial')rHist();if(t==='busqueda')initBus();}
 function allFlat(){const r=[];Object.keys(EX).sort().forEach(k=>{const[y,m]=k.split('-').map(Number);(EX[k]||[]).forEach(e=>r.push({...e,mes:MN[m]+' '+y}));});return r;}
 function openLb(src){const lb=document.createElement('div');lb.className='lbox';lb.innerHTML=`<img src="${src}" alt="diseño">`;lb.onclick=()=>lb.remove();document.body.appendChild(lb);}
 
@@ -577,7 +577,8 @@ function buscar(){
 function render(){
   document.getElementById('month-label').textContent=MN[cM]+' '+cY;
   const list=mExp(),tot=list.reduce((s,e)=>s+e.amount,0);
-  const past=isPastRealMonth();
+  const editingHere=editId!=null&&editKey===ky();
+  const past=isPastRealMonth()&&!editingHere;
   document.getElementById('mes-active-content').classList.toggle('hidden',past);
   document.getElementById('mes-archived-notice').classList.toggle('hidden',!past);
   if(past){
@@ -722,15 +723,15 @@ function histDelExp(key, id){
 
 // Editar desde historial — navega al mes y abre el editor
 function histEditExp(key, id){
+  // La clave de EX ya guarda el mes en base 0 (igual que ky()), sin +1/-1.
   var parts = key.split('-');
-  var y = parseInt(parts[0]), m = parseInt(parts[1])-1;
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
   cY = y; cM = m;
+  editExp(Number(id));
   swTab('mes');
   render();
-  // Esperar render y luego abrir edicion
-  setTimeout(function(){
-    editExp(Number(id));
-  }, 200);
+  var f = document.querySelector('.add-form');
+  if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Override sv() para guardar en Firebase
