@@ -2847,8 +2847,10 @@ function _pdfFooter(doc, hoy, W, H) {
 
 // ===================== PDF NOTA DE RECEPCIÓN =====================
 function exportNotaPDF(i) {
+ try {
   const m = DB.mantenimiento[i];
-  if(!window.jspdf){ alert('Cargando PDF...'); return; }
+  if(!m){ alert('No se encontró esa nota (posiblemente la lista se actualizó). Refresca la página e intenta de nuevo.'); return; }
+  if(!window.jspdf){ alert('Cargando PDF, intenta en un momento...'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();
@@ -3009,7 +3011,7 @@ function exportNotaPDF(i) {
 
     ef.forEach((item, idx2) => {
       checkPage(8);
-      doc.setFillColor(idx2%2===0 ? C.white : C.rowAlt);
+      doc.setFillColor(...(idx2%2===0 ? C.white : C.rowAlt));
       doc.rect(12, y-3, pw-24, 7, 'F');
       doc.setDrawColor(...C.border);
       doc.rect(12, y-3, pw-24, 7, 'S');
@@ -3042,7 +3044,7 @@ function exportNotaPDF(i) {
     y += 8;
     entregados.forEach((a, idx3) => {
       checkPage(8);
-      doc.setFillColor(idx3%2===0 ? C.white : C.rowAlt);
+      doc.setFillColor(...(idx3%2===0 ? C.white : C.rowAlt));
       doc.rect(12, y-3, pw-24, 7, 'F');
       doc.setDrawColor(...C.border); doc.rect(12, y-3, pw-24, 7, 'S');
       doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.darkText);
@@ -3055,28 +3057,98 @@ function exportNotaPDF(i) {
   }
 
   // ── COSTOS ───────────────────────────────────────────────
-  if(m.costoTotal || m.anticipo) {
+  if(m.costoDiag || m.costoRefacc || m.costoMant || m.costoTotal || m.anticipo) {
     secTitle('Costos del Servicio');
-    checkPage(30);
+
+    const anticipoVal = parseFloat(m.anticipo)||0;
+    const saldoVal = Math.max(0, (parseFloat(m.costoTotal)||0) - anticipoVal);
+    const filas = [];
+    if(m.costoDiag)   filas.push(['Costo de Diagnóstico:',   fmt_PDF(m.costoDiag),   C.darkText]);
+    if(m.costoRefacc) filas.push(['Costo de Refacciones:',   fmt_PDF(m.costoRefacc), C.darkText]);
+    if(m.costoMant)   filas.push(['Costo de Mantenimiento:', fmt_PDF(m.costoMant),   C.darkText]);
+    if(anticipoVal > 0) {
+      filas.push(['Anticipo recibido:', fmt_PDF(anticipoVal), C.success]);
+      filas.push(['Saldo pendiente:',   fmt_PDF(saldoVal),    C.danger]);
+    }
+
+    const boxH = 16 + filas.length * 6;
+    checkPage(boxH + 4);
     doc.setFillColor(...C.rowAlt);
-    doc.roundedRect(12, y-2, pw-24, 28, 2, 2, 'F');
+    doc.roundedRect(12, y-2, pw-24, boxH, 2, 2, 'F');
+
     doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.purpleLight);
     doc.text('Costo Total del Servicio:', 16, y+6);
     doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...C.purple);
-    doc.text('$'+(m.costoTotal||0), 90, y+6);
-    if(m.anticipo) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
-      doc.text('Anticipo recibido:', 16, y+14);
-      doc.setFont('helvetica','bold'); doc.setTextColor(...C.success);
-      doc.text('$'+m.anticipo, 90, y+14);
-      doc.setFont('helvetica','normal'); doc.setTextColor(...C.gray);
-      doc.text('Saldo pendiente:', 16, y+21);
-      doc.setFont('helvetica','bold'); doc.setTextColor(...C.danger);
-      const saldo = (parseFloat(m.costoTotal)||0)-(parseFloat(m.anticipo)||0);
-      doc.text('$'+Math.max(0,saldo).toLocaleString('es-MX'), 90, y+21);
-    }
-    y += 34;
+    doc.text(fmt_PDF(m.costoTotal||0), 90, y+6);
+
+    let ly = y + 14;
+    filas.forEach(f => {
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.darkText);
+      doc.text(f[0], 16, ly);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...f[2]);
+      doc.text(f[1], 90, ly);
+      ly += 6;
+    });
+
+    y += boxH + 6;
   }
+
+  // ── LEYENDA PAGADO Y ENTREGADO ─────────────────────────────
+  if(m.estado === 'Entregado') {
+    checkPage(18);
+    doc.setFillColor(254, 226, 226);
+    doc.roundedRect(12, y-2, pw-24, 15, 2, 2, 'F');
+    doc.setDrawColor(...C.danger);
+    doc.roundedRect(12, y-2, pw-24, 15, 2, 2, 'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...C.danger);
+    doc.text('PAGADO Y ENTREGADO', 16, y+8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...C.darkText);
+    doc.text('Fecha de entrega: ' + (m.fechaEntrega ? fmtD_PDF(m.fechaEntrega) : '—'), pw-16, y+8, {align:'right'});
+    y += 21;
+  }
+
+  // ── CONDICIONES DEL SERVICIO ──────────────────────────────
+  secTitle('Condiciones del Servicio');
+  const condiciones = [
+    'El equipo se recibe sin respaldo de información.',
+    'El taller no se hace responsable por fallas no reportadas previamente.',
+    'El diagnóstico puede generar un costo adicional.',
+    'El tiempo de entrega depende del diagnóstico y disponibilidad de refacciones.'
+  ];
+  condiciones.forEach(c => {
+    const cLines = doc.splitTextToSize(c, pw-40);
+    checkPage(cLines.length * 5 + 2);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...C.purpleLight);
+    doc.text('•', 16, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...C.darkText);
+    doc.text(cLines, 21, y);
+    y += cLines.length * 5 + 1.5;
+  });
+  y += 3;
+
+  // ── AVISO LEGAL ────────────────────────────────────────────
+  secTitle('Aviso Legal');
+  const avisoItems = [
+    'El cliente autoriza al taller Crea3DCancún a realizar pruebas, diagnóstico y manipulación técnica del equipo.',
+    'El taller no se hace responsable por pérdida de información, configuraciones, daños previos no reportados ni por fallas derivadas del desgaste normal del equipo.',
+    'Toda reparación o mantenimiento se realizará previa autorización del cliente.',
+    'Los equipos que no sean reclamados en un plazo mayor a 30 días naturales después de notificada su conclusión podrán generar cargos por almacenaje.'
+  ];
+  const avisoLinesArr = avisoItems.map(t => doc.splitTextToSize(t, pw-40));
+  const avisoTotalLines = avisoLinesArr.reduce((a,l) => a + l.length, 0);
+  const avisoBoxH = avisoTotalLines * 5 + avisoItems.length * 1.5 + 6;
+  checkPage(avisoBoxH + 4);
+  doc.setFillColor(...C.rowAlt);
+  doc.roundedRect(12, y-3, pw-24, avisoBoxH, 2, 2, 'F');
+  let avisoY = y + 3;
+  avisoLinesArr.forEach(lines => {
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...C.purpleLight);
+    doc.text('•', 16, avisoY);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...C.darkText);
+    doc.text(lines, 21, avisoY);
+    avisoY += lines.length * 5 + 1.5;
+  });
+  y += avisoBoxH + 6;
 
   // ── FIRMAS ───────────────────────────────────────────────
   checkPage(35);
@@ -3084,7 +3156,7 @@ function exportNotaPDF(i) {
   doc.setDrawColor(...C.border);
   doc.line(20, y+20, 85, y+20);
   doc.line(pw-85, y+20, pw-20, y+20);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.gray);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.darkText);
   doc.text('Firma del Cliente', 52, y+25, {align:'center'});
   doc.text('Recibido por Crea3D', pw-52, y+25, {align:'center'});
   doc.text(m.cliente||'', 52, y+30, {align:'center'});
@@ -3097,6 +3169,10 @@ function exportNotaPDF(i) {
   doc.text('Crea3D Cancún  ·  www.crea3dcancun.com  ·  Folio: '+(m.id||''), pw/2, ph-4, {align:'center'});
 
   doc.save('Nota_Recepcion_'+(m.id||'')+'_'+(m.cliente||'').replace(/\s+/g,'_')+'.pdf');
+ } catch(e) {
+  console.error('Error generando PDF de nota de recepción:', e);
+  alert('No se pudo generar el PDF: ' + (e.message||e) + '\n\n' + (e.stack||''));
+ }
 }
 
 // ===================== PDF NOTA DE SERVICIO =====================
