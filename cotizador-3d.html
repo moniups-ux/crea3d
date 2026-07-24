@@ -42,8 +42,10 @@ header {
 }
 .nav-btn:hover { color: white; border-color: rgba(255,255,255,0.25); }
 .nav-btn.active { color: var(--primary); border-color: var(--primary); background: rgba(255,107,0,0.1); }
-.header-right { margin-left: auto; display: flex; align-items: center; padding-right: 20px; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-right: 20px; }
 .badge { background: var(--primary); color: white; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 700; }
+.back-btn { background: rgba(255,255,255,.15); color: #fff; border: 1.5px solid rgba(255,255,255,.3); border-radius: 50px; padding: 7px 15px; font-size: 13px; font-weight: 700; text-decoration: none; transition: all .2s; white-space: nowrap; }
+.back-btn:hover { background: rgba(255,255,255,.28); }
 
 /* LAYOUT */
 .app { display: flex; min-height: calc(100vh - 64px); }
@@ -209,6 +211,7 @@ input:focus, select:focus, textarea:focus {
   </nav>
   <div class="header-right">
     <span class="badge" id="badge-count">0 cotizaciones</span>
+    <a href="index.html" class="back-btn">⬅ Volver al Menú</a>
   </div>
 </header>
 
