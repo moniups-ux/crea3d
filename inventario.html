@@ -160,7 +160,10 @@ var _fbRef=_fdb.doc('inventario/control');
         <label>Existencia inicial<input name="existencia" type="number" min="0" value="0"></label>
         <label>Stock mínimo<input name="stockMinimo" type="number" min="0" value="2"></label>
         <label>Proveedor<input name="proveedor" placeholder="Proveedor X"></label>
-        <button class="primary" type="submit">Agregar producto</button>
+        <div style="display:flex;gap:8px">
+          <button class="primary" type="submit" id="btnGuardarProducto">Agregar producto</button>
+          <button type="button" class="ghost" id="btnCancelarProducto" style="display:none" onclick="cancelEditProduct()">Cancelar edición</button>
+        </div>
       </form>
     </div>
     <div class="panel">
@@ -189,7 +192,10 @@ var _fbRef=_fdb.doc('inventario/control');
         <label>Precio unitario<input name="precioUnitario" type="number" step="0.01" min="0" required></label>
         <label>Proveedor<input name="proveedor" placeholder="Proveedor X"></label>
         <label>Factura / Folio<input name="factura" placeholder="Opcional"></label>
-        <button class="primary" type="submit">Registrar compra</button>
+        <div style="display:flex;gap:8px">
+          <button class="primary" type="submit" id="btnGuardarCompra">Registrar compra</button>
+          <button type="button" class="ghost" id="btnCancelarCompra" style="display:none" onclick="cancelEditPurchase()">Cancelar edición</button>
+        </div>
       </form>
     </div>
     <div class="panel">
@@ -222,7 +228,10 @@ var _fbRef=_fdb.doc('inventario/control');
             <option>Otro</option>
           </select>
         </label>
-        <button class="primary" type="submit">Registrar venta</button>
+        <div style="display:flex;gap:8px">
+          <button class="primary" type="submit" id="btnGuardarVenta">Registrar venta</button>
+          <button type="button" class="ghost" id="btnCancelarVenta" style="display:none" onclick="cancelEditSale()">Cancelar edición</button>
+        </div>
       </form>
     </div>
     <div class="panel">
@@ -299,6 +308,9 @@ function toggleNombreField(){
 }
 function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
 let DATA = loadData();
+let editingProductId = null;
+let editingPurchaseId = null;
+let editingSaleId = null;
 
 function nextId(){ return DATA.seq++; }
 function fmt(n){ return '$' + (Number(n)||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -311,14 +323,13 @@ function toast(msg){
 }
 
 // ---------- NAV ----------
+function showView(name){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id===name));
+  renderAll();
+}
 document.querySelectorAll('nav button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.view).classList.add('active');
-    renderAll();
-  });
+  btn.addEventListener('click', ()=> showView(btn.dataset.view));
 });
 
 // ---------- CATALOGO ----------
@@ -336,6 +347,27 @@ document.getElementById('formProducto').addEventListener('submit', e=>{
     ? document.getElementById('nombreSelect').value
     : document.getElementById('nombreText').value.trim();
   if(!nombre){ toast('Selecciona o escribe el producto'); return; }
+
+  if(editingProductId !== null){
+    const p = DATA.products.find(x=>x.id===editingProductId);
+    if(p){
+      p.nombre = nombre;
+      p.marca = f.get('marca').trim();
+      p.color = f.get('color').trim();
+      p.presentacion = f.get('presentacion').trim();
+      p.categoria = categoria;
+      p.costoCompra = parseFloat(f.get('costoCompra'))||0;
+      p.precioVenta = parseFloat(f.get('precioVenta'))||0;
+      p.existencia = parseInt(f.get('existencia'))||0;
+      p.stockMinimo = parseInt(f.get('stockMinimo'))||0;
+      p.proveedor = f.get('proveedor').trim();
+      saveData();
+      toast(`Producto ${p.codigo} actualizado ✔`);
+    }
+    cancelEditProduct();
+    renderAll();
+    return;
+  }
 
   const codigo = previewCode(categoria);
   DATA.codeCounters[categoria] = (DATA.codeCounters[categoria] || 1) + 1;
@@ -363,9 +395,46 @@ document.getElementById('formProducto').addEventListener('submit', e=>{
   renderAll();
 });
 
+function editProduct(id){
+  const p = DATA.products.find(x=>x.id===id);
+  if(!p) return;
+  editingProductId = id;
+  const form = document.getElementById('formProducto');
+  document.getElementById('categoriaSelect').value = p.categoria;
+  toggleNombreField();
+  if(p.categoria === 'Filamentos'){
+    document.getElementById('nombreSelect').value = p.nombre;
+  } else {
+    document.getElementById('nombreText').value = p.nombre;
+  }
+  form.querySelector('input[name=marca]').value = p.marca||'';
+  form.querySelector('input[name=color]').value = p.color||'';
+  form.querySelector('input[name=presentacion]').value = p.presentacion||'';
+  form.querySelector('input[name=costoCompra]').value = p.costoCompra||0;
+  form.querySelector('input[name=precioVenta]').value = p.precioVenta||0;
+  form.querySelector('input[name=existencia]').value = p.existencia||0;
+  form.querySelector('input[name=stockMinimo]').value = p.stockMinimo||0;
+  form.querySelector('input[name=proveedor]').value = p.proveedor||'';
+  document.getElementById('codigoField').value = p.codigo;
+  document.getElementById('btnGuardarProducto').textContent = 'Actualizar producto';
+  document.getElementById('btnCancelarProducto').style.display = '';
+  showView('catalogo');
+  form.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelEditProduct(){
+  editingProductId = null;
+  document.getElementById('formProducto').reset();
+  updateCodigoPreview();
+  toggleNombreField();
+  document.getElementById('btnGuardarProducto').textContent = 'Agregar producto';
+  document.getElementById('btnCancelarProducto').style.display = 'none';
+}
+
 function deleteProduct(id){
   if(!confirm('¿Eliminar este producto del catálogo? (no borra su historial de compras/ventas)')) return;
   DATA.products = DATA.products.filter(p=>p.id!==id);
+  if(editingProductId === id) cancelEditProduct();
   saveData(); renderAll();
 }
 
@@ -381,7 +450,8 @@ function renderCatalogo(){
     tr.innerHTML = `<td>${p.codigo}</td><td>${p.nombre}</td><td>${p.marca||'-'}</td><td>${p.color||'-'}</td>
       <td>${p.categoria}</td><td>${fmt(p.costoCompra)}</td><td>${fmt(p.precioVenta)}</td>
       <td>${p.existencia}</td><td>${estado}</td>
-      <td><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></td>`;
+      <td><button class="ghost" style="padding:4px 10px;font-size:11px" onclick="editProduct(${p.id})">Editar</button>
+      <button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></td>`;
     body.appendChild(tr);
   });
 }
@@ -407,6 +477,25 @@ document.getElementById('formCompra').addEventListener('submit', e=>{
   const precioUnitario = parseFloat(f.get('precioUnitario'));
   const total = cantidad*precioUnitario;
 
+  if(editingPurchaseId !== null){
+    const c = DATA.purchases.find(x=>x.id===editingPurchaseId);
+    if(c){
+      c.fecha = f.get('fecha');
+      c.proveedor = f.get('proveedor').trim();
+      c.productoId = productoId;
+      c.productoNombre = producto.nombre+' '+(producto.color||'');
+      c.cantidad = cantidad;
+      c.precioUnitario = precioUnitario;
+      c.total = total;
+      c.factura = f.get('factura').trim();
+      saveData();
+      toast('Compra actualizada ✔ — el inventario no se recalculó automáticamente');
+    }
+    cancelEditPurchase();
+    renderAll();
+    return;
+  }
+
   // costo promedio ponderado
   const existenciaAnterior = producto.existencia;
   const valorAnterior = existenciaAnterior*producto.costoCompra;
@@ -426,9 +515,36 @@ document.getElementById('formCompra').addEventListener('submit', e=>{
   renderAll();
 });
 
+function editPurchase(id){
+  const c = DATA.purchases.find(x=>x.id===id);
+  if(!c) return;
+  editingPurchaseId = id;
+  const form = document.getElementById('formCompra');
+  form.querySelector('input[name=fecha]').value = c.fecha;
+  form.querySelector('select[name=productoId]').value = c.productoId;
+  form.querySelector('input[name=cantidad]').value = c.cantidad;
+  form.querySelector('input[name=precioUnitario]').value = c.precioUnitario;
+  form.querySelector('input[name=proveedor]').value = c.proveedor||'';
+  form.querySelector('input[name=factura]').value = c.factura||'';
+  document.getElementById('btnGuardarCompra').textContent = 'Actualizar compra';
+  document.getElementById('btnCancelarCompra').style.display = '';
+  showView('compras');
+  form.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelEditPurchase(){
+  editingPurchaseId = null;
+  const form = document.getElementById('formCompra');
+  form.reset();
+  form.querySelector('input[name=fecha]').value = today();
+  document.getElementById('btnGuardarCompra').textContent = 'Registrar compra';
+  document.getElementById('btnCancelarCompra').style.display = 'none';
+}
+
 function deletePurchase(id){
   if(!confirm('¿Eliminar esta compra? Esto no revertirá el inventario automáticamente.')) return;
   DATA.purchases = DATA.purchases.filter(c=>c.id!==id);
+  if(editingPurchaseId === id) cancelEditPurchase();
   saveData(); renderAll();
 }
 
@@ -441,7 +557,8 @@ function renderCompras(){
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${c.fecha}</td><td>${c.productoNombre}</td><td>${c.proveedor||'-'}</td>
       <td>${c.cantidad}</td><td>${fmt(c.precioUnitario)}</td><td>${fmt(c.total)}</td><td>${c.factura||'-'}</td>
-      <td><button class="danger" onclick="deletePurchase(${c.id})">Eliminar</button></td>`;
+      <td><button class="ghost" style="padding:4px 10px;font-size:11px" onclick="editPurchase(${c.id})">Editar</button>
+      <button class="danger" onclick="deletePurchase(${c.id})">Eliminar</button></td>`;
     body.appendChild(tr);
   });
 }
@@ -461,6 +578,32 @@ document.getElementById('formVenta').addEventListener('submit', e=>{
   const producto = DATA.products.find(p=>p.id===productoId);
   if(!producto){ toast('Selecciona un producto'); return; }
   const cantidad = parseInt(f.get('cantidad'));
+
+  if(editingSaleId !== null){
+    const v = DATA.sales.find(x=>x.id===editingSaleId);
+    if(v){
+      const precioVenta = parseFloat(f.get('precioVenta'));
+      const total = cantidad*precioVenta;
+      const costoTotal = cantidad*v.costoUnitario;
+      const utilidad = total-costoTotal;
+      v.fecha = f.get('fecha');
+      v.cliente = f.get('cliente').trim();
+      v.productoId = productoId;
+      v.productoNombre = producto.nombre+' '+(producto.color||'');
+      v.cantidad = cantidad;
+      v.precioVenta = precioVenta;
+      v.total = total;
+      v.costoTotal = costoTotal;
+      v.utilidad = utilidad;
+      v.metodoPago = f.get('metodoPago');
+      saveData();
+      toast('Venta actualizada ✔ — el inventario no se recalculó automáticamente');
+    }
+    cancelEditSale();
+    renderAll();
+    return;
+  }
+
   if(cantidad>producto.existencia){
     if(!confirm(`Solo hay ${producto.existencia} en existencia. ¿Registrar de todas formas?`)) return;
   }
@@ -485,9 +628,36 @@ document.getElementById('formVenta').addEventListener('submit', e=>{
   renderAll();
 });
 
+function editSale(id){
+  const v = DATA.sales.find(x=>x.id===id);
+  if(!v) return;
+  editingSaleId = id;
+  const form = document.getElementById('formVenta');
+  form.querySelector('input[name=fecha]').value = v.fecha;
+  form.querySelector('select[name=productoId]').value = v.productoId;
+  form.querySelector('input[name=cantidad]').value = v.cantidad;
+  form.querySelector('input[name=precioVenta]').value = v.precioVenta;
+  form.querySelector('input[name=cliente]').value = v.cliente||'';
+  form.querySelector('select[name=metodoPago]').value = v.metodoPago;
+  document.getElementById('btnGuardarVenta').textContent = 'Actualizar venta';
+  document.getElementById('btnCancelarVenta').style.display = '';
+  showView('ventas');
+  form.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelEditSale(){
+  editingSaleId = null;
+  const form = document.getElementById('formVenta');
+  form.reset();
+  form.querySelector('input[name=fecha]').value = today();
+  document.getElementById('btnGuardarVenta').textContent = 'Registrar venta';
+  document.getElementById('btnCancelarVenta').style.display = 'none';
+}
+
 function deleteSale(id){
   if(!confirm('¿Eliminar esta venta? Esto no revertirá el inventario automáticamente.')) return;
   DATA.sales = DATA.sales.filter(v=>v.id!==id);
+  if(editingSaleId === id) cancelEditSale();
   saveData(); renderAll();
 }
 
@@ -501,7 +671,8 @@ function renderVentas(){
     tr.innerHTML = `<td>${v.fecha}</td><td>${v.productoNombre}</td><td>${v.cliente||'-'}</td>
       <td>${v.cantidad}</td><td>${fmt(v.precioVenta)}</td><td>${fmt(v.total)}</td>
       <td style="color:${v.utilidad>=0?'var(--green)':'var(--red)'}">${fmt(v.utilidad)}</td>
-      <td><button class="danger" onclick="deleteSale(${v.id})">Eliminar</button></td>`;
+      <td><button class="ghost" style="padding:4px 10px;font-size:11px" onclick="editSale(${v.id})">Editar</button>
+      <button class="danger" onclick="deleteSale(${v.id})">Eliminar</button></td>`;
     body.appendChild(tr);
   });
 }
