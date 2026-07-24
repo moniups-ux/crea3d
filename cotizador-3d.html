@@ -50,8 +50,8 @@ header {
 
 /* SIDEBAR */
 .sidebar {
-  width: 270px; min-width: 240px; background: var(--secondary); color: #ccc;
-  padding: 20px 16px; overflow-y: auto;
+  width: 310px; min-width: 280px; background: var(--secondary); color: #ccc;
+  padding: 20px 18px; overflow-y: auto;
   position: sticky; top: 64px; height: calc(100vh - 64px);
 }
 .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
@@ -59,7 +59,7 @@ header {
 .cfg-group-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #2a2a40; }
 .cfg-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; gap: 8px; }
 .cfg-row label { font-size: 12px; color: #aaa; line-height: 1.3; flex: 1; }
-.cfg-input-wrap { position: relative; width: 80px; flex-shrink: 0; }
+.cfg-input-wrap { position: relative; width: 92px; flex-shrink: 0; }
 .cfg-input-wrap input {
   width: 100%; padding: 6px 28px 6px 8px; background: #252540; border: 1px solid #3a3a58;
   border-radius: 6px; color: white; font-size: 12px; text-align: right; outline: none;
@@ -393,7 +393,7 @@ input:focus, select:focus, textarea:focus {
           <p>Ingresa los datos de la pieza — el desglose se calcula automáticamente</p>
         </div>
         <div style="display:flex; gap:8px">
-          <button class="btn-sm" onclick="saveQuote()">💾 Guardar</button>
+          <button class="btn-sm" id="btn-save-quote" onclick="saveQuote()">💾 Guardar</button>
           <button class="btn-sm" onclick="printQuote()">🖨️ Imprimir</button>
           <button class="btn-sm danger" onclick="resetForm()">🗑️ Limpiar</button>
         </div>
@@ -515,7 +515,7 @@ input:focus, select:focus, textarea:focus {
               <div class="fg">
                 <label class="yellow-label">Costo por kg del material</label>
                 <div class="input-u">
-                  <input type="number" id="f-matkg" value="250" min="0" step="10" class="yellow-input" oninput="calcular()">
+                  <input type="number" id="f-matkg" value="600" min="0" step="10" class="yellow-input" oninput="calcular()">
                   <span class="iu">$/kg</span>
                 </div>
               </div>
@@ -766,9 +766,9 @@ input:focus, select:focus, textarea:focus {
 <script>
 // ==================== MATERIAL PRICES ($/kg defaults) ====================
 const MAT_PRICES = {
-  pla:         250,
-  petg:        320,
-  abs:         300,
+  pla:         600,
+  petg:        600,
+  abs:         600,
   tpu:         450,
   asa:         400,
   nylon:       600,
@@ -800,6 +800,7 @@ let cfg = {
 
 let history = [];
 let quoteCounter = 1;
+let editingId = null;
 
 // ==================== INIT ====================
 function init() {
@@ -1036,21 +1037,120 @@ function toggleRow(id, show) {
 }
 
 // ==================== HISTORY ====================
+function getFormData() {
+  return {
+    part: document.getElementById('f-part').value,
+    client: document.getElementById('f-client').value,
+    days: document.getElementById('f-days').value,
+    hr: document.getElementById('f-hr').value,
+    min: document.getElementById('f-min').value,
+    labor: document.getElementById('f-labor').value,
+    material: document.getElementById('f-material').value,
+    color: document.getElementById('f-color').value,
+    grams: document.getElementById('f-grams').value,
+    matkg: document.getElementById('f-matkg').value,
+    stl: document.getElementById('f-stl').value,
+    qty: document.getElementById('f-qty').value,
+    designOn: document.getElementById('t-design').checked,
+    designH: document.getElementById('f-design-h').value,
+    designComplex: document.getElementById('f-design-complex').value,
+    sandOn: document.getElementById('t-sand').checked,
+    sandH: document.getElementById('f-sand-h').value,
+    paintOn: document.getElementById('t-paint').checked,
+    paintType: document.getElementById('f-paint-type').value,
+    supportOn: document.getElementById('t-support').checked,
+    assemblyOn: document.getElementById('t-assembly').checked,
+    shipType: document.getElementById('f-ship-type').value,
+    urgency: document.getElementById('f-urgency').value,
+    discountOn: document.getElementById('t-discount').checked,
+    discount: document.getElementById('f-discount').value,
+    discountReason: document.getElementById('f-discount-reason').value,
+    ivaOn: document.getElementById('t-iva').checked,
+    notes: document.getElementById('f-notes').value,
+  };
+}
+
+function setFormData(d) {
+  document.getElementById('f-part').value = d.part || '';
+  document.getElementById('f-client').value = d.client || '';
+  document.getElementById('f-days').value = d.days ?? '0';
+  document.getElementById('f-hr').value = d.hr ?? '0';
+  document.getElementById('f-min').value = d.min ?? '0';
+  document.getElementById('f-labor').value = d.labor ?? '0';
+  document.getElementById('f-material').value = d.material || 'pla';
+  document.getElementById('f-color').value = d.color ?? '0';
+  document.getElementById('f-grams').value = d.grams ?? '0';
+  document.getElementById('f-matkg').value = d.matkg ?? '600';
+  document.getElementById('f-stl').value = d.stl ?? '0';
+  document.getElementById('f-qty').value = d.qty ?? '1';
+
+  document.getElementById('t-design').checked = !!d.designOn;
+  document.getElementById('f-design-h').value = d.designH ?? '1';
+  document.getElementById('f-design-complex').value = d.designComplex ?? '1.0';
+  document.getElementById('c-design').classList.toggle('show', !!d.designOn);
+
+  document.getElementById('t-sand').checked = !!d.sandOn;
+  document.getElementById('f-sand-h').value = d.sandH ?? '1';
+  document.getElementById('c-sand').classList.toggle('show', !!d.sandOn);
+
+  document.getElementById('t-paint').checked = !!d.paintOn;
+  document.getElementById('f-paint-type').value = d.paintType || 'basic';
+  document.getElementById('c-paint').classList.toggle('show', !!d.paintOn);
+
+  document.getElementById('t-support').checked = !!d.supportOn;
+  document.getElementById('t-assembly').checked = !!d.assemblyOn;
+
+  document.getElementById('f-ship-type').value = d.shipType ?? '0';
+  document.getElementById('f-urgency').value = d.urgency ?? '0';
+
+  document.getElementById('t-discount').checked = !!d.discountOn;
+  document.getElementById('f-discount').value = d.discount ?? '10';
+  document.getElementById('f-discount-reason').value = d.discountReason || '';
+  document.getElementById('c-discount').classList.toggle('show', !!d.discountOn);
+
+  document.getElementById('t-iva').checked = !!d.ivaOn;
+  document.getElementById('f-notes').value = d.notes || '';
+}
+
 function saveQuote() {
   calcular();
   const c = window._calc;
   if (!c) return;
+  const formData = getFormData();
+
+  if (editingId !== null) {
+    const q = history.find(x => x.id === editingId);
+    if (q) {
+      q.part    = formData.part || '(sin nombre)';
+      q.client  = formData.client || '(sin cliente)';
+      q.grams   = c.grams * c.qty;
+      q.printMin= c.printMin;
+      q.gastos  = c.totalGastos;
+      q.total   = c.total;
+      q.formData= formData;
+      localStorage.setItem('crea3d_history3', JSON.stringify(history));
+      renderHistory();
+      updateBadge();
+      alert(`✅ ${q.num} actualizada.`);
+      exitEditMode();
+      return;
+    }
+    // fallback: si no se encontró, seguir como cotización nueva
+    editingId = null;
+  }
+
   const q = {
     id: quoteCounter,
     num: 'COT-' + String(quoteCounter).padStart(3,'0'),
     date: new Date().toLocaleDateString('es-MX'),
-    part: document.getElementById('f-part').value || '(sin nombre)',
-    client: document.getElementById('f-client').value || '(sin cliente)',
+    part: formData.part || '(sin nombre)',
+    client: formData.client || '(sin cliente)',
     grams: c.grams * c.qty,
     printMin: c.printMin,
     gastos: c.totalGastos,
     total: c.total,
     status: 'pending',
+    formData,
   };
   history.unshift(q);
   quoteCounter++;
@@ -1060,6 +1160,53 @@ function saveQuote() {
   renderHistory();
   updateBadge();
   alert(`✅ ${q.num} guardada.`);
+}
+
+function editQuote(id) {
+  const q = history.find(x => x.id === id);
+  if (!q) return;
+  if (!q.formData) {
+    alert('Esta cotización se guardó con una versión anterior y no tiene datos completos para editar. Puedes verla en el historial pero no recargarla al formulario.');
+    return;
+  }
+  editingId = id;
+  setFormData(q.formData);
+  document.getElementById('r-quotenum').textContent = q.num;
+  showSection('nueva');
+  calcular();
+  updateEditBanner();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitEditMode() {
+  editingId = null;
+  document.getElementById('r-quotenum').textContent = 'COT-' + String(quoteCounter).padStart(3,'0');
+  updateEditBanner();
+}
+
+function cancelEdit() {
+  exitEditMode();
+  resetForm();
+}
+
+function updateEditBanner() {
+  const saveBtn = document.getElementById('btn-save-quote');
+  if (saveBtn) saveBtn.textContent = editingId !== null ? '💾 Actualizar' : '💾 Guardar';
+
+  let banner = document.getElementById('edit-banner');
+  if (editingId !== null) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'edit-banner';
+      banner.style.cssText = 'background:#FFF3CD;border:1px solid #F9A825;color:#7A6000;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px';
+      const topBar = document.querySelector('#section-nueva .top-bar');
+      topBar.insertAdjacentElement('afterend', banner);
+    }
+    banner.innerHTML = `<span>✏️ Editando cotización — al guardar se actualizará la existente en vez de crear una nueva.</span><button onclick="cancelEdit()" style="background:none;border:1px solid #F9A825;border-radius:6px;padding:3px 10px;cursor:pointer;font-weight:700;color:#7A6000">Cancelar edición</button>`;
+    banner.style.display = 'flex';
+  } else if (banner) {
+    banner.style.display = 'none';
+  }
 }
 
 function loadHistory() {
@@ -1099,7 +1246,10 @@ function renderHistory() {
           <option value="rejected" ${q.status==='rejected'?'selected':''}>❌ Rechazada</option>
         </select>
       </td>
-      <td><button onclick="deleteQuote(${q.id})" style="background:none;border:none;cursor:pointer;font-size:16px" title="Eliminar">🗑️</button></td>
+      <td>
+        <button onclick="editQuote(${q.id})" style="background:none;border:none;cursor:pointer;font-size:16px" title="Editar">✏️</button>
+        <button onclick="deleteQuote(${q.id})" style="background:none;border:none;cursor:pointer;font-size:16px" title="Eliminar">🗑️</button>
+      </td>
     </tr>`).join('')}
     </tbody></table></div>`;
 }
@@ -1128,7 +1278,10 @@ function showSection(name, btn) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
-  btn.classList.add('active');
+  if (!btn) {
+    btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => (b.getAttribute('onclick')||'').includes(`'${name}'`));
+  }
+  if (btn) btn.classList.add('active');
 }
 
 function resetForm() {
@@ -1158,6 +1311,7 @@ function resetForm() {
   document.getElementById('c-sand').classList.remove('show');
   document.getElementById('c-paint').classList.remove('show');
   document.getElementById('c-discount').classList.remove('show');
+  if (editingId !== null) exitEditMode();
   calcular();
 }
 
