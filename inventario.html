@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Crea3D Cancún — Inventario</title>
+
+<!-- Firebase PRIMERO antes que todo -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+var _fbCfg={apiKey:"AIzaSyDE7NjpVdfL3uSfynv4RzDyGYT9jtY6kZ8",authDomain:"crea3d-pedidos.firebaseapp.com",projectId:"crea3d-pedidos",storageBucket:"crea3d-pedidos.firebasestorage.app",messagingSenderId:"1018801484372",appId:"1:1018801484372:web:1ba0cd28cbbba6f605b3c1"};
+if(!firebase.apps.length)firebase.initializeApp(_fbCfg);
+var _fdb=firebase.firestore();
+var _fbRef=_fdb.doc('inventario/control');
+</script>
+
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --border:#e2e6ea; --text:#1f2933;
+    --muted:#6b7785; --blue:#2563eb; --green:#16a34a; --red:#dc2626;
+    --orange:#d97706; --yellow:#fef9c3;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);margin:0;color:var(--text);}
+
+  /* BARRA SUPERIOR CREA3D */
+  .crea3d-top{background:#111827;padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
+  .crea3d-top-left{display:flex;align-items:center;gap:10px}
+  .crea3d-empresa{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+  .crea3d-pagename{font-size:14px;font-weight:700;color:#fff}
+  .crea3d-back{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:50px;padding:7px 15px;font-size:13px;font-weight:700;text-decoration:none;transition:all .2s;white-space:nowrap}
+  .crea3d-back:hover{background:rgba(255,255,255,.22)}
+
+  header{background:#111827;color:#fff;padding:18px 24px;}
+  header h1{margin:0;font-size:20px;}
+  header p{margin:4px 0 0;color:#9ca3af;font-size:13px;}
+  nav{display:flex;gap:4px;background:#1f2937;padding:0 24px;flex-wrap:wrap;}
+  nav button{background:none;border:none;color:#d1d5db;padding:12px 16px;cursor:pointer;font-size:14px;border-bottom:3px solid transparent;}
+  nav button.active{color:#fff;border-bottom:3px solid var(--blue);font-weight:600;}
+  nav button:hover{color:#fff;}
+  main{padding:20px 24px 60px;max-width:1200px;margin:0 auto;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .card .value{font-size:24px;font-weight:700;margin-top:6px;}
+  .card.green .value{color:var(--green);}
+  .card.red .value{color:var(--red);}
+  .card.blue .value{color:var(--blue);}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px;}
+  .panel h2{margin-top:0;font-size:16px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;}
+  th{background:#f9fafb;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;}
+  tr.low{background:#fff7ed;}
+  tr.out{background:#fef2f2;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge.low{background:#ffedd5;color:var(--orange);}
+  .badge.out{background:#fee2e2;color:var(--red);}
+  .badge.ok{background:#dcfce7;color:var(--green);}
+  form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;}
+  form label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px;}
+  input,select{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;}
+  button.primary{background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
+  button.primary:hover{background:#1d4ed8;}
+  button.danger{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;}
+  button.ghost{background:none;border:1px solid var(--border);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text);}
+  .row-actions{display:flex;gap:8px;}
+  .alert-list{list-style:none;padding:0;margin:0;}
+  .alert-list li{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .alert-list li:last-child{border-bottom:none;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+  .toolbar .actions{display:flex;gap:8px;}
+  .empty{color:var(--muted);font-size:13px;padding:12px 0;}
+  .footer-note{font-size:12px;color:var(--muted);margin-top:30px;text-align:center;}
+  #toast{position:fixed;bottom:20px;right:20px;background:#111827;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;}
+  #toast.show{opacity:1;}
+  #fb-ind{position:fixed;bottom:16px;left:16px;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .4s;box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none}
+</style>
+</head>
+<body>
+
+<div class="crea3d-top">
+  <div class="crea3d-top-left">
+    <span style="font-size:26px">📦</span>
+    <div>
+      <div class="crea3d-empresa">Crea3D Cancún</div>
+      <div class="crea3d-pagename">Sistema de Inventario</div>
+    </div>
+  </div>
+  <a href="index.html" class="crea3d-back">⬅ Volver al Menú</a>
+</div>
+<div id="fb-ind"></div>
+
+<header>
+  <h1>🖨️ Sistema de Inventario</h1>
+  <p>Filamentos · Resinas · Refacciones — Todo se guarda automáticamente en este navegador</p>
+</header>
+
+<nav>
+  <button data-view="dashboard" class="active">Dashboard</button>
+  <button data-view="catalogo">Catálogo</button>
+  <button data-view="compras">Compras</button>
+  <button data-view="ventas">Ventas</button>
+  <button data-view="historial">Historial</button>
+  <button data-view="backup">Respaldo</button>
+</nav>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="view active">
+    <div class="cards" id="dashCards"></div>
+    <div class="panel">
+      <h2>⚠️ Productos por comprar</h2>
+      <ul class="alert-list" id="lowStockList"></ul>
+    </div>
+    <div class="panel">
+      <h2>Últimos movimientos</h2>
+      <table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Total</th></tr></thead>
+        <tbody id="recentMoves"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CATALOGO -->
+  <section id="catalogo" class="view">
+    <div class="panel">
+      <h2>Nuevo producto</h2>
+      <form id="formProducto">
+        <label>Código<input id="codigoField" name="codigo" readonly style="background:#f3f4f6;color:var(--muted)"></label>
+        <label id="nombreTextWrap">Producto<input id="nombreText" placeholder="Filamento PLA"></label>
+        <label id="nombreSelectWrap" style="display:none">Material
+          <select id="nombreSelect">
+            <option value="">Selecciona...</option>
+            <option>PLA</option>
+            <option>PETG</option>
+            <option>ABS</option>
+            <option>ASA</option>
+            <option>NYLON</option>
+            <option>TPU</option>
+          </select>
+        </label>
+        <label>Marca<input name="marca" placeholder="eSUN"></label>
+        <label>Color<input name="color" placeholder="Negro"></label>
+        <label>Presentación<input name="presentacion" placeholder="1 kg"></label>
+        <label>Categoría
+          <select name="categoria" id="categoriaSelect">
+            <option>Filamentos</option>
+            <option>Resinas</option>
+            <option>Refacciones</option>
+            <option>Boquillas</option>
+            <option>Plataformas / camas</option>
+            <option>Consumibles</option>
+            <option>Accesorios</option>
+          </select>
+        </label>
+        <label>Costo de compra<input name="costoCompra" type="number" step="0.01" min="0" value="0"></label>
+        <label>Precio de venta<input name="precioVenta" type="number" step="0.01" min="0" required></label>
+        <label>Existencia inicial<input name="existencia" type="number" min="0" value="0"></label>
+        <label>Stock mínimo<input name="stockMinimo" type="number" min="0" value="2"></label>
+        <label>Proveedor<input name="proveedor" placeholder="Proveedor X"></label>
+        <button class="primary" type="submit">Agregar producto</button>
+      </form>
+    </div>
+    <div class="panel">
+      <div class="toolbar"><h2 style="margin:0">Catálogo de productos</h2></div>
+      <table>
+        <thead><tr>
+          <th>Código</th><th>Producto</th><th>Marca</th><th>Color</th><th>Categoría</th>
+          <th>Costo</th><th>Precio</th><th>Existencia</th><th>Estado</th><th></th>
+        </tr></thead>
+        <tbody id="catalogoBody"></tbody>
+      </table>
+      <div class="empty" id="catalogoEmpty" style="display:none">Aún no hay productos. Agrega el primero arriba.</div>
+    </div>
+  </section>
+
+  <!-- COMPRAS -->
+  <section id="compras" class="view">
+    <div class="panel">
+      <h2>Registrar compra</h2>
+      <form id="formCompra">
+        <label>Fecha<input name="fecha" type="date" required></label>
+        <label>Producto
+          <select name="productoId" required></select>
+        </label>
+        <label>Cantidad<input name="cantidad" type="number" min="1" value="1" required></label>
+        <label>Precio unitario<input name="precioUnitario" type="number" step="0.01" min="0" required></label>
+        <label>Proveedor<input name="proveedor" placeholder="Proveedor X"></label>
+        <label>Factura / Folio<input name="factura" placeholder="Opcional"></label>
+        <button class="primary" type="submit">Registrar compra</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Compras registradas</h2>
+      <table>
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Proveedor</th><th>Cant.</th><th>Precio unit.</th><th>Total</th><th>Factura</th><th></th></tr></thead>
+        <tbody id="comprasBody"></tbody>
+      </table>
+      <div class="empty" id="comprasEmpty" style="display:none">Aún no hay compras registradas.</div>
+    </div>
+  </section>
+
+  <!-- VENTAS -->
+  <section id="ventas" class="view">
+    <div class="panel">
+      <h2>Registrar venta</h2>
+      <form id="formVenta">
+        <label>Fecha<input name="fecha" type="date" required></label>
+        <label>Producto
+          <select name="productoId" required></select>
+        </label>
+        <label>Cantidad<input name="cantidad" type="number" min="1" value="1" required></label>
+        <label>Precio de venta<input name="precioVenta" type="number" step="0.01" min="0" required></label>
+        <label>Cliente<input name="cliente" placeholder="Opcional"></label>
+        <label>Método de pago
+          <select name="metodoPago">
+            <option>Efectivo</option>
+            <option>Transferencia</option>
+            <option>Tarjeta</option>
+            <option>Otro</option>
+          </select>
+        </label>
+        <button class="primary" type="submit">Registrar venta</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Ventas registradas</h2>
+      <table>
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Cliente</th><th>Cant.</th><th>Precio</th><th>Total</th><th>Utilidad</th><th></th></tr></thead>
+        <tbody id="ventasBody"></tbody>
+      </table>
+      <div class="empty" id="ventasEmpty" style="display:none">Aún no hay ventas registradas.</div>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="historial" class="view">
+    <div class="panel">
+      <div class="toolbar">
+        <h2 style="margin:0">Resumen por mes</h2>
+        <div class="actions">
+          <button class="ghost" id="btnDescargarPDF">📄 Descargar PDF (compras, ventas y resumen)</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Mes</th><th>Compras</th><th>Ventas</th><th>Costo de lo vendido</th><th>Utilidad bruta</th></tr></thead>
+        <tbody id="historialBody"></tbody>
+      </table>
+      <div class="empty" id="historialEmpty" style="display:none">Aún no hay movimientos.</div>
+    </div>
+  </section>
+
+  <!-- BACKUP -->
+  <section id="backup" class="view">
+    <div class="panel">
+      <h2>Respaldo de datos</h2>
+      <p style="font-size:13px;color:var(--muted)">
+        Todo se guarda automáticamente en este navegador (localStorage). Si cambias de computadora o navegador,
+        exporta tus datos aquí y luego impórtalos del otro lado para no perder tu información.
+      </p>
+      <div class="row-actions">
+        <button class="ghost" id="btnExport">⬇️ Exportar respaldo (JSON)</button>
+        <label class="ghost" style="cursor:pointer;display:inline-flex;align-items:center;">
+          ⬆️ Importar respaldo
+          <input type="file" id="btnImport" accept=".json" style="display:none">
+        </label>
+        <button class="ghost" id="btnExportCSV">⬇️ Exportar ventas (CSV)</button>
+        <button class="danger" id="btnReset" style="border:1px solid var(--red);border-radius:6px;padding:7px 14px;">🗑️ Borrar todos los datos</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="footer-note">Sistema local · los datos viven en este navegador · usa "Respaldo" para exportarlos regularmente</p>
+</main>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const STORAGE_KEY = 'crea3d_sistema_v1';
+
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    const d = JSON.parse(raw);
+    if(!d.codeCounters) d.codeCounters = {};
+    return d;
+  }
+  return { products: [], purchases: [], sales: [], seq: 1, codeCounters: {} };
+}
+
+const CODE_PREFIXES = {
+  'Filamentos': 'MAT',
+  'Resinas': 'RES',
+  'Refacciones': 'REF',
+  'Boquillas': 'BOQ',
+  'Plataformas / camas': 'CAM',
+  'Consumibles': 'CON',
+  'Accesorios': 'ACC'
+};
+function pad(n){ return String(n).padStart(3,'0'); }
+function previewCode(categoria){
+  const prefix = CODE_PREFIXES[categoria] || 'GEN';
+  const n = DATA.codeCounters[categoria] || 1;
+  return prefix + '-' + pad(n);
+}
+function updateCodigoPreview(){
+  const categoria = document.getElementById('categoriaSelect').value;
+  document.getElementById('codigoField').value = previewCode(categoria);
+}
+function toggleNombreField(){
+  const categoria = document.getElementById('categoriaSelect').value;
+  const isFilamento = categoria === 'Filamentos';
+  document.getElementById('nombreTextWrap').style.display = isFilamento ? 'none' : '';
+  document.getElementById('nombreSelectWrap').style.display = isFilamento ? '' : 'none';
+}
+function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
+let DATA = loadData();
+
+function nextId(){ return DATA.seq++; }
+function fmt(n){ return '$' + (Number(n)||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function monthKey(dateStr){ return dateStr.slice(0,7); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ---------- NAV ----------
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.view).classList.add('active');
+    renderAll();
+  });
+});
+
+// ---------- CATALOGO ----------
+document.getElementById('categoriaSelect').addEventListener('change', ()=>{
+  updateCodigoPreview();
+  toggleNombreField();
+});
+
+document.getElementById('formProducto').addEventListener('submit', e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const categoria = f.get('categoria');
+  const isFilamento = categoria === 'Filamentos';
+  const nombre = isFilamento
+    ? document.getElementById('nombreSelect').value
+    : document.getElementById('nombreText').value.trim();
+  if(!nombre){ toast('Selecciona o escribe el producto'); return; }
+
+  const codigo = previewCode(categoria);
+  DATA.codeCounters[categoria] = (DATA.codeCounters[categoria] || 1) + 1;
+
+  const p = {
+    id: nextId(),
+    codigo,
+    nombre,
+    marca: f.get('marca').trim(),
+    color: f.get('color').trim(),
+    presentacion: f.get('presentacion').trim(),
+    categoria,
+    costoCompra: parseFloat(f.get('costoCompra'))||0,
+    precioVenta: parseFloat(f.get('precioVenta'))||0,
+    existencia: parseInt(f.get('existencia'))||0,
+    stockMinimo: parseInt(f.get('stockMinimo'))||0,
+    proveedor: f.get('proveedor').trim()
+  };
+  DATA.products.push(p);
+  saveData();
+  e.target.reset();
+  updateCodigoPreview();
+  toggleNombreField();
+  toast(`Producto ${codigo} agregado ✔`);
+  renderAll();
+});
+
+function deleteProduct(id){
+  if(!confirm('¿Eliminar este producto del catálogo? (no borra su historial de compras/ventas)')) return;
+  DATA.products = DATA.products.filter(p=>p.id!==id);
+  saveData(); renderAll();
+}
+
+function renderCatalogo(){
+  const body = document.getElementById('catalogoBody');
+  body.innerHTML = '';
+  document.getElementById('catalogoEmpty').style.display = DATA.products.length? 'none':'block';
+  DATA.products.forEach(p=>{
+    const tr = document.createElement('tr');
+    let estado = '<span class="badge ok">OK</span>';
+    if(p.existencia<=0){ tr.classList.add('out'); estado='<span class="badge out">Agotado</span>'; }
+    else if(p.existencia<=p.stockMinimo){ tr.classList.add('low'); estado='<span class="badge low">Stock bajo</span>'; }
+    tr.innerHTML = `<td>${p.codigo}</td><td>${p.nombre}</td><td>${p.marca||'-'}</td><td>${p.color||'-'}</td>
+      <td>${p.categoria}</td><td>${fmt(p.costoCompra)}</td><td>${fmt(p.precioVenta)}</td>
+      <td>${p.existencia}</td><td>${estado}</td>
+      <td><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+function fillProductSelects(){
+  const opts = DATA.products.map(p=>`<option value="${p.id}">${p.codigo} — ${p.nombre} ${p.color||''} (existencia: ${p.existencia})</option>`).join('');
+  document.querySelectorAll('select[name="productoId"]').forEach(sel=>{
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Selecciona un producto...</option>' + opts;
+    if(current) sel.value = current;
+  });
+}
+
+// ---------- COMPRAS ----------
+document.getElementById('formCompra').querySelector('input[name=fecha]').value = today();
+document.getElementById('formCompra').addEventListener('submit', e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const productoId = parseInt(f.get('productoId'));
+  const producto = DATA.products.find(p=>p.id===productoId);
+  if(!producto){ toast('Selecciona un producto'); return; }
+  const cantidad = parseInt(f.get('cantidad'));
+  const precioUnitario = parseFloat(f.get('precioUnitario'));
+  const total = cantidad*precioUnitario;
+
+  // costo promedio ponderado
+  const existenciaAnterior = producto.existencia;
+  const valorAnterior = existenciaAnterior*producto.costoCompra;
+  const nuevaExistencia = existenciaAnterior+cantidad;
+  producto.costoCompra = nuevaExistencia>0 ? (valorAnterior+total)/nuevaExistencia : precioUnitario;
+  producto.existencia = nuevaExistencia;
+
+  DATA.purchases.push({
+    id: nextId(), fecha: f.get('fecha'), proveedor: f.get('proveedor').trim(),
+    productoId, productoNombre: producto.nombre+' '+(producto.color||''),
+    cantidad, precioUnitario, total, factura: f.get('factura').trim()
+  });
+  saveData();
+  e.target.reset();
+  e.target.querySelector('input[name=fecha]').value = today();
+  toast('Compra registrada ✔ — inventario actualizado');
+  renderAll();
+});
+
+function deletePurchase(id){
+  if(!confirm('¿Eliminar esta compra? Esto no revertirá el inventario automáticamente.')) return;
+  DATA.purchases = DATA.purchases.filter(c=>c.id!==id);
+  saveData(); renderAll();
+}
+
+function renderCompras(){
+  const body = document.getElementById('comprasBody');
+  body.innerHTML = '';
+  const list = [...DATA.purchases].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  document.getElementById('comprasEmpty').style.display = list.length? 'none':'block';
+  list.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.fecha}</td><td>${c.productoNombre}</td><td>${c.proveedor||'-'}</td>
+      <td>${c.cantidad}</td><td>${fmt(c.precioUnitario)}</td><td>${fmt(c.total)}</td><td>${c.factura||'-'}</td>
+      <td><button class="danger" onclick="deletePurchase(${c.id})">Eliminar</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ---------- VENTAS ----------
+document.getElementById('formVenta').querySelector('input[name=fecha]').value = today();
+document.getElementById('formVenta').querySelector('select[name=productoId]').addEventListener('change', e=>{
+  const producto = DATA.products.find(p=>p.id===parseInt(e.target.value));
+  if(producto){
+    e.target.closest('form').querySelector('input[name=precioVenta]').value = producto.precioVenta;
+  }
+});
+document.getElementById('formVenta').addEventListener('submit', e=>{
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const productoId = parseInt(f.get('productoId'));
+  const producto = DATA.products.find(p=>p.id===productoId);
+  if(!producto){ toast('Selecciona un producto'); return; }
+  const cantidad = parseInt(f.get('cantidad'));
+  if(cantidad>producto.existencia){
+    if(!confirm(`Solo hay ${producto.existencia} en existencia. ¿Registrar de todas formas?`)) return;
+  }
+  const precioVenta = parseFloat(f.get('precioVenta'));
+  const total = cantidad*precioVenta;
+  const costoUnitario = producto.costoCompra;
+  const costoTotal = cantidad*costoUnitario;
+  const utilidad = total-costoTotal;
+
+  producto.existencia -= cantidad;
+
+  DATA.sales.push({
+    id: nextId(), fecha: f.get('fecha'), cliente: f.get('cliente').trim(),
+    productoId, productoNombre: producto.nombre+' '+(producto.color||''),
+    cantidad, precioVenta, total, costoUnitario, costoTotal, utilidad,
+    metodoPago: f.get('metodoPago')
+  });
+  saveData();
+  e.target.reset();
+  e.target.querySelector('input[name=fecha]').value = today();
+  toast('Venta registrada ✔ — inventario actualizado');
+  renderAll();
+});
+
+function deleteSale(id){
+  if(!confirm('¿Eliminar esta venta? Esto no revertirá el inventario automáticamente.')) return;
+  DATA.sales = DATA.sales.filter(v=>v.id!==id);
+  saveData(); renderAll();
+}
+
+function renderVentas(){
+  const body = document.getElementById('ventasBody');
+  body.innerHTML = '';
+  const list = [...DATA.sales].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  document.getElementById('ventasEmpty').style.display = list.length? 'none':'block';
+  list.forEach(v=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${v.fecha}</td><td>${v.productoNombre}</td><td>${v.cliente||'-'}</td>
+      <td>${v.cantidad}</td><td>${fmt(v.precioVenta)}</td><td>${fmt(v.total)}</td>
+      <td style="color:${v.utilidad>=0?'var(--green)':'var(--red)'}">${fmt(v.utilidad)}</td>
+      <td><button class="danger" onclick="deleteSale(${v.id})">Eliminar</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ---------- DASHBOARD ----------
+function renderDashboard(){
+  const mesActual = today().slice(0,7);
+  const ventasMes = DATA.sales.filter(v=>monthKey(v.fecha)===mesActual);
+  const comprasMes = DATA.purchases.filter(c=>monthKey(c.fecha)===mesActual);
+  const totalVentasMes = ventasMes.reduce((s,v)=>s+v.total,0);
+  const totalComprasMes = comprasMes.reduce((s,c)=>s+c.total,0);
+  const utilidadMes = ventasMes.reduce((s,v)=>s+v.utilidad,0);
+  const valorInventario = DATA.products.reduce((s,p)=>s+p.existencia*p.costoCompra,0);
+  const bajos = DATA.products.filter(p=>p.existencia>0 && p.existencia<=p.stockMinimo);
+  const agotados = DATA.products.filter(p=>p.existencia<=0);
+
+  const cards = [
+    {label:'Valor actual del inventario', value:fmt(valorInventario), cls:'blue'},
+    {label:'Ventas del mes', value:fmt(totalVentasMes), cls:'green'},
+    {label:'Compras del mes', value:fmt(totalComprasMes), cls:''},
+    {label:'Utilidad bruta del mes', value:fmt(utilidadMes), cls: utilidadMes>=0?'green':'red'},
+    {label:'Productos con stock bajo', value:bajos.length, cls: bajos.length?'red':''},
+    {label:'Productos agotados', value:agotados.length, cls: agotados.length?'red':''}
+  ];
+  document.getElementById('dashCards').innerHTML = cards.map(c=>
+    `<div class="card ${c.cls}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`
+  ).join('');
+
+  const alerts = document.getElementById('lowStockList');
+  const items = [...agotados.map(p=>`<li><strong>${p.nombre} ${p.color||''}</strong> — <span class="badge out">agotado</span></li>`),
+                  ...bajos.map(p=>`<li><strong>${p.nombre} ${p.color||''}</strong> — quedan ${p.existencia} <span class="badge low">stock bajo</span></li>`)];
+  alerts.innerHTML = items.length ? items.join('') : '<li class="empty">Todo en orden, ningún producto en alerta.</li>';
+
+  const moves = [
+    ...DATA.purchases.map(c=>({fecha:c.fecha, tipo:'Compra', producto:c.productoNombre, cantidad:c.cantidad, total:c.total})),
+    ...DATA.sales.map(v=>({fecha:v.fecha, tipo:'Venta', producto:v.productoNombre, cantidad:v.cantidad, total:v.total}))
+  ].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,10);
+  document.getElementById('recentMoves').innerHTML = moves.length ? moves.map(m=>
+    `<tr><td>${m.fecha}</td><td>${m.tipo}</td><td>${m.producto}</td><td>${m.cantidad}</td><td>${fmt(m.total)}</td></tr>`
+  ).join('') : '<tr><td colspan="5" class="empty">Sin movimientos todavía.</td></tr>';
+}
+
+// ---------- HISTORIAL ----------
+function getMonthlySummary(){
+  const meses = {};
+  DATA.purchases.forEach(c=>{
+    const k = monthKey(c.fecha);
+    meses[k] = meses[k]||{compras:0, ventas:0, costo:0, utilidad:0};
+    meses[k].compras += c.total;
+  });
+  DATA.sales.forEach(v=>{
+    const k = monthKey(v.fecha);
+    meses[k] = meses[k]||{compras:0, ventas:0, costo:0, utilidad:0};
+    meses[k].ventas += v.total;
+    meses[k].costo += v.costoTotal;
+    meses[k].utilidad += v.utilidad;
+  });
+  return meses;
+}
+
+function renderHistorial(){
+  const meses = getMonthlySummary();
+  const keys = Object.keys(meses).sort().reverse();
+  document.getElementById('historialEmpty').style.display = keys.length? 'none':'block';
+  document.getElementById('historialBody').innerHTML = keys.map(k=>{
+    const m = meses[k];
+    return `<tr><td>${k}</td><td>${fmt(m.compras)}</td><td>${fmt(m.ventas)}</td><td>${fmt(m.costo)}</td>
+      <td style="color:${m.utilidad>=0?'var(--green)':'var(--red)'}">${fmt(m.utilidad)}</td></tr>`;
+  }).join('');
+}
+
+// ---------- PDF ----------
+function generatePDF(){
+  if(!window.jspdf){ alert('No se pudo cargar la librería de PDF. Verifica tu conexión a internet e intenta de nuevo.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const marginX = 14;
+
+  doc.setFontSize(16);
+  doc.text('Reporte de Compras y Ventas', marginX, 16);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text('Generado el ' + today(), marginX, 22);
+  doc.setTextColor(0);
+
+  // Resumen mensual
+  const meses = getMonthlySummary();
+  const keys = Object.keys(meses).sort();
+  doc.setFontSize(13);
+  doc.text('Resumen general por mes', marginX, 32);
+  doc.autoTable({
+    startY: 36,
+    margin: { left: marginX, right: marginX },
+    head: [['Mes','Compras','Ventas','Costo de lo vendido','Utilidad bruta']],
+    body: keys.length ? keys.map(k=>{
+      const m = meses[k];
+      return [k, fmt(m.compras), fmt(m.ventas), fmt(m.costo), fmt(m.utilidad)];
+    }) : [['Sin movimientos','-','-','-','-']],
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [37,99,235] }
+  });
+
+  // Totales generales
+  const totCompras = DATA.purchases.reduce((s,c)=>s+c.total,0);
+  const totVentas = DATA.sales.reduce((s,v)=>s+v.total,0);
+  const totCosto = DATA.sales.reduce((s,v)=>s+v.costoTotal,0);
+  const totUtilidad = DATA.sales.reduce((s,v)=>s+v.utilidad,0);
+  let y = doc.lastAutoTable.finalY + 8;
+  doc.setFontSize(10);
+  doc.text(`Total compras: ${fmt(totCompras)}   |   Total ventas: ${fmt(totVentas)}   |   Costo de lo vendido: ${fmt(totCosto)}   |   Utilidad bruta total: ${fmt(totUtilidad)}`, marginX, y);
+
+  // Detalle de compras
+  doc.addPage();
+  doc.setFontSize(13);
+  doc.text('Detalle de compras', marginX, 16);
+  const comprasOrdenadas = [...DATA.purchases].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  doc.autoTable({
+    startY: 20,
+    margin: { left: marginX, right: marginX },
+    head: [['Fecha','Producto','Proveedor','Cant.','Precio unit.','Total','Factura']],
+    body: comprasOrdenadas.length ? comprasOrdenadas.map(c=>[
+      c.fecha, c.productoNombre, c.proveedor||'-', c.cantidad, fmt(c.precioUnitario), fmt(c.total), c.factura||'-'
+    ]) : [['Sin compras registradas','-','-','-','-','-','-']],
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [37,99,235] }
+  });
+
+  // Detalle de ventas
+  doc.addPage();
+  doc.setFontSize(13);
+  doc.text('Detalle de ventas', marginX, 16);
+  const ventasOrdenadas = [...DATA.sales].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  doc.autoTable({
+    startY: 20,
+    margin: { left: marginX, right: marginX },
+    head: [['Fecha','Producto','Cliente','Cant.','Precio','Total','Utilidad','Método']],
+    body: ventasOrdenadas.length ? ventasOrdenadas.map(v=>[
+      v.fecha, v.productoNombre, v.cliente||'-', v.cantidad, fmt(v.precioVenta), fmt(v.total), fmt(v.utilidad), v.metodoPago
+    ]) : [['Sin ventas registradas','-','-','-','-','-','-','-']],
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [37,99,235] }
+  });
+
+  doc.save('reporte_compras_ventas_' + today() + '.pdf');
+}
+document.getElementById('btnDescargarPDF').addEventListener('click', generatePDF);
+
+// ---------- BACKUP ----------
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'respaldo_sistema_3d_'+today()+'.json';
+  a.click();
+});
+document.getElementById('btnImport').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const imported = JSON.parse(reader.result);
+      if(!confirm('Esto reemplazará todos los datos actuales con el respaldo importado. ¿Continuar?')) return;
+      DATA = imported;
+      saveData();
+      toast('Respaldo importado ✔');
+      renderAll();
+    }catch(err){ alert('Archivo inválido: '+err.message); }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('btnExportCSV').addEventListener('click', ()=>{
+  let csv = 'Fecha,Producto,Cliente,Cantidad,Precio,Total,Costo,Utilidad,Metodo de pago\n';
+  DATA.sales.forEach(v=>{
+    csv += `${v.fecha},"${v.productoNombre}","${v.cliente||''}",${v.cantidad},${v.precioVenta},${v.total},${v.costoTotal},${v.utilidad},${v.metodoPago}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ventas_'+today()+'.csv';
+  a.click();
+});
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Esto borrará TODOS los productos, compras y ventas. ¿Estás seguro?')) return;
+  if(!confirm('Última confirmación: se perderá todo si no exportaste un respaldo. ¿Continuar?')) return;
+  DATA = { products: [], purchases: [], sales: [], seq: 1 };
+  saveData();
+  toast('Datos borrados');
+  renderAll();
+});
+
+// ---------- RENDER ALL ----------
+function renderAll(){
+  renderDashboard();
+  renderCatalogo();
+  fillProductSelects();
+  renderCompras();
+  renderVentas();
+  renderHistorial();
+}
+renderAll();
+updateCodigoPreview();
+toggleNombreField();
+
+// ── Firebase sync ────────────────────────────────────────────
+var _ind = document.getElementById('fb-ind');
+function _showFB(msg, c) {
+  _ind.textContent = msg;
+  _ind.style.background = c || '#059669';
+  _ind.style.color = '#fff';
+  _ind.style.opacity = '1';
+  clearTimeout(_ind._t);
+  _ind._t = setTimeout(function () { _ind.style.opacity = '0'; }, 3000);
+}
+
+// Override saveData() para guardar también en la nube
+var _origSaveData = saveData;
+saveData = function () {
+  _origSaveData();
+  _fbRef.set({ DATA: DATA, ts: new Date().toISOString() })
+    .then(function () { _showFB('Guardado en la nube'); })
+    .catch(function (e) { console.error('FB save:', e); _showFB('Error al guardar', '#dc2626'); });
+};
+
+// Cargar desde Firebase al iniciar
+_showFB('Sincronizando...', '#7c3aed');
+_fbRef.get().then(function (snap) {
+  if (snap.exists) {
+    var d = snap.data();
+    if (d && d.DATA) {
+      DATA = d.DATA;
+      if (!DATA.codeCounters) DATA.codeCounters = {};
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+      _showFB('Sincronizado');
+    } else { _showFB('Conectado'); }
+  } else { _showFB('Conectado'); }
+  renderAll();
+  updateCodigoPreview();
+  toggleNombreField();
+}).catch(function (e) {
+  console.error('FB load:', e);
+  _showFB('Sin conexión a la nube', '#dc2626');
+});
+</script>
+</body>
+</html>
