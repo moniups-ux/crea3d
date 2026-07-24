@@ -27,7 +27,7 @@ var _fbRef=_fdb.doc('inventario/control');
   .crea3d-top{background:#111827;padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
   .crea3d-top-left{display:flex;align-items:center;gap:10px}
   .crea3d-empresa{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
-  .crea3d-pagename{font-size:14px;font-weight:700;color:#fff}
+  .crea3d-pagename{font-size:20px;font-weight:700;color:#fff}
   .crea3d-back{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:50px;padding:7px 15px;font-size:13px;font-weight:700;text-decoration:none;transition:all .2s;white-space:nowrap}
   .crea3d-back:hover{background:rgba(255,255,255,.22)}
 
@@ -94,8 +94,7 @@ var _fbRef=_fdb.doc('inventario/control');
 <div id="fb-ind"></div>
 
 <header>
-  <h1>🖨️ Sistema de Inventario</h1>
-  <p>Filamentos · Resinas · Refacciones — Todo se guarda automáticamente en este navegador</p>
+  <p style="margin:0">Filamentos · Resinas · Refacciones — Todo se guarda automáticamente en este navegador</p>
 </header>
 
 <nav>
@@ -104,7 +103,6 @@ var _fbRef=_fdb.doc('inventario/control');
   <button data-view="compras">Compras</button>
   <button data-view="ventas">Ventas</button>
   <button data-view="historial">Historial</button>
-  <button data-view="backup">Respaldo</button>
 </nav>
 
 <main>
@@ -254,27 +252,7 @@ var _fbRef=_fdb.doc('inventario/control');
     </div>
   </section>
 
-  <!-- BACKUP -->
-  <section id="backup" class="view">
-    <div class="panel">
-      <h2>Respaldo de datos</h2>
-      <p style="font-size:13px;color:var(--muted)">
-        Todo se guarda automáticamente en este navegador (localStorage). Si cambias de computadora o navegador,
-        exporta tus datos aquí y luego impórtalos del otro lado para no perder tu información.
-      </p>
-      <div class="row-actions">
-        <button class="ghost" id="btnExport">⬇️ Exportar respaldo (JSON)</button>
-        <label class="ghost" style="cursor:pointer;display:inline-flex;align-items:center;">
-          ⬆️ Importar respaldo
-          <input type="file" id="btnImport" accept=".json" style="display:none">
-        </label>
-        <button class="ghost" id="btnExportCSV">⬇️ Exportar ventas (CSV)</button>
-        <button class="danger" id="btnReset" style="border:1px solid var(--red);border-radius:6px;padding:7px 14px;">🗑️ Borrar todos los datos</button>
-      </div>
-    </div>
-  </section>
-
-  <p class="footer-note">Sistema local · los datos viven en este navegador · usa "Respaldo" para exportarlos regularmente</p>
+  <p class="footer-note">Sistema local · los datos también se guardan en la nube automáticamente</p>
 </main>
 
 <div id="toast"></div>
@@ -670,50 +648,6 @@ function generatePDF(){
   doc.save('reporte_compras_ventas_' + today() + '.pdf');
 }
 document.getElementById('btnDescargarPDF').addEventListener('click', generatePDF);
-
-// ---------- BACKUP ----------
-document.getElementById('btnExport').addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'respaldo_sistema_3d_'+today()+'.json';
-  a.click();
-});
-document.getElementById('btnImport').addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    try{
-      const imported = JSON.parse(reader.result);
-      if(!confirm('Esto reemplazará todos los datos actuales con el respaldo importado. ¿Continuar?')) return;
-      DATA = imported;
-      saveData();
-      toast('Respaldo importado ✔');
-      renderAll();
-    }catch(err){ alert('Archivo inválido: '+err.message); }
-  };
-  reader.readAsText(file);
-});
-document.getElementById('btnExportCSV').addEventListener('click', ()=>{
-  let csv = 'Fecha,Producto,Cliente,Cantidad,Precio,Total,Costo,Utilidad,Metodo de pago\n';
-  DATA.sales.forEach(v=>{
-    csv += `${v.fecha},"${v.productoNombre}","${v.cliente||''}",${v.cantidad},${v.precioVenta},${v.total},${v.costoTotal},${v.utilidad},${v.metodoPago}\n`;
-  });
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'ventas_'+today()+'.csv';
-  a.click();
-});
-document.getElementById('btnReset').addEventListener('click', ()=>{
-  if(!confirm('Esto borrará TODOS los productos, compras y ventas. ¿Estás seguro?')) return;
-  if(!confirm('Última confirmación: se perderá todo si no exportaste un respaldo. ¿Continuar?')) return;
-  DATA = { products: [], purchases: [], sales: [], seq: 1 };
-  saveData();
-  toast('Datos borrados');
-  renderAll();
-});
 
 // ---------- RENDER ALL ----------
 function renderAll(){
