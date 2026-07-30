@@ -101,7 +101,7 @@ header {
 /* LAYOUT */
 .layout-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .layout-bottom { margin-top: 20px; }
-.dg-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.dg-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
 .data-card { background: var(--card); border-radius: 10px; padding: 16px 18px; border: 1px solid var(--border); box-shadow: var(--shadow); }
 .dc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 6px; }
 .dc-val { font-size: 22px; font-weight: 800; color: var(--secondary); line-height: 1; }
@@ -308,6 +308,81 @@ input:focus, select:focus, textarea:focus {
     </div>
 
     <div class="cfg-group">
+      <div class="cfg-group-label">📦 Mayoreo / producción en lote</div>
+      <div class="cfg-row">
+        <label>Piezas por placa (default)</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-pieces-plate" value="1" min="1" step="1">
+          <span class="cfg-unit">pzs</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Impresoras en paralelo (default)</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-parallel" value="1" min="1" step="1">
+          <span class="cfg-unit">imp.</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>% Fallos esperados en tanda</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-fail-rate" value="3" min="0" max="50" step="0.5">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Costo fijo de setup / pedido</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-setup-fee" value="0" min="0" step="10">
+          <span class="cfg-unit">$</span>
+        </div>
+      </div>
+      <div style="font-size:10px; color:#666; margin:10px 0 6px; text-transform:uppercase; letter-spacing:.5px; font-weight:700">Descuento automático por volumen</div>
+      <div class="cfg-row">
+        <label>Nivel 1 — desde</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-tier1-qty" value="10" min="1" step="1">
+          <span class="cfg-unit">pzs</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Nivel 1 — descuento</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-tier1-pct" value="5" min="0" max="80" step="1">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Nivel 2 — desde</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-tier2-qty" value="25" min="1" step="1">
+          <span class="cfg-unit">pzs</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Nivel 2 — descuento</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-tier2-pct" value="10" min="0" max="80" step="1">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Nivel 3 — desde</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-tier3-qty" value="50" min="1" step="1">
+          <span class="cfg-unit">pzs</span>
+        </div>
+      </div>
+      <div class="cfg-row">
+        <label>Nivel 3 — descuento</label>
+        <div class="cfg-input-wrap">
+          <input type="number" id="c-tier3-pct" value="15" min="0" max="80" step="1">
+          <span class="cfg-unit">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-group">
       <div class="cfg-group-label">Postprocesado</div>
       <div class="cfg-row">
         <label>Lijado / acabado (por hora)</label>
@@ -408,7 +483,7 @@ input:focus, select:focus, textarea:focus {
           <div class="data-card">
             <div class="dc-label">Tiempo de impresión</div>
             <div class="dc-val" id="dg-time">—</div>
-            <div class="dc-unit">minutos totales</div>
+            <div class="dc-unit">minutos (por placa)</div>
           </div>
           <div class="data-card">
             <div class="dc-label">Consumo eléctrico</div>
@@ -424,6 +499,11 @@ input:focus, select:focus, textarea:focus {
             <div class="dc-label">Total de gastos</div>
             <div class="dc-val" id="dg-gastos" style="color:#e74c3c">—</div>
             <div class="dc-unit">antes de ganancia</div>
+          </div>
+          <div class="data-card">
+            <div class="dc-label">Precio por pieza</div>
+            <div class="dc-val accent" id="dg-unit-price">—</div>
+            <div class="dc-unit">total ÷ cantidad</div>
           </div>
         </div>
       </div>
@@ -480,6 +560,9 @@ input:focus, select:focus, textarea:focus {
                 </div>
               </div>
             </div>
+            <div style="font-size:11px; color:var(--text-light); margin-top:-6px; margin-bottom:10px" id="time-hint">
+              ⏱️ Con "Pedido a mayoreo" activo, este tiempo se toma como el de <strong>una placa/impresión completa</strong> (no por pieza individual).
+            </div>
 
             <div class="divider"></div>
             <div class="sec-label">Material e Impresión</div>
@@ -509,7 +592,7 @@ input:focus, select:focus, textarea:focus {
             </div>
             <div class="row2">
               <div class="fg">
-                <label>Gramos de filamento</label>
+                <label>Gramos de filamento (por pieza)</label>
                 <div class="input-u">
                   <input type="number" id="f-grams" value="0" min="0" oninput="calcular()">
                   <span class="iu">g</span>
@@ -538,6 +621,39 @@ input:focus, select:focus, textarea:focus {
               <div class="input-u">
                 <input type="number" id="f-qty" value="1" min="1" oninput="calcular()">
                 <span class="iu">pzs</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sec-label">📦 Pedido a Mayoreo</div>
+            <div class="toggle-row" style="border-bottom:none; padding-bottom:0">
+              <span class="toggle-label">¿Es un pedido a mayoreo / producción en lote?</span>
+              <label class="toggle">
+                <input type="checkbox" id="t-wholesale" onchange="toggleWholesale()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="conditional" id="c-wholesale">
+              <div class="row2" style="margin-top:10px">
+                <div class="fg">
+                  <label>Piezas por placa/impresión</label>
+                  <div class="input-u">
+                    <input type="number" id="f-pieces-plate" value="1" min="1" step="1" oninput="calcular()">
+                    <span class="iu">pzs</span>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>Impresoras en paralelo</label>
+                  <div class="input-u">
+                    <input type="number" id="f-parallel" value="1" min="1" step="1" oninput="calcular()">
+                    <span class="iu">imp.</span>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:11px; color:#7A7A8C; background:#F7F8FC; border-radius:6px; padding:9px 11px; line-height:1.6">
+                📐 Placas/impresiones necesarias: <strong id="dg-plates-info">—</strong><br>
+                🔁 Buffer de reimpresión aplicado: <strong id="dg-fail-info">—</strong><br>
+                🏷️ Descuento automático por volumen: <strong id="dg-vol-disc-info">—</strong>
               </div>
             </div>
 
@@ -653,7 +769,7 @@ input:focus, select:focus, textarea:focus {
 
             <!-- Descuento toggle -->
             <div class="toggle-row">
-              <span class="toggle-label">Aplicar descuento</span>
+              <span class="toggle-label">Aplicar descuento manual adicional</span>
               <label class="toggle">
                 <input type="checkbox" id="t-discount" onchange="toggleSection('t-discount','c-discount'); calcular()">
                 <span class="toggle-slider"></span>
@@ -710,6 +826,7 @@ input:focus, select:focus, textarea:focus {
                 <tr id="row-design" class="hidden-row"><td class="r-label">🖊️ Diseño 3D <span class="r-pct" id="r-design-pct"></span></td><td class="r-val" id="r-design">$0.00</td></tr>
                 <tr><td class="r-label">🔧 Depreciación impresora</td><td class="r-val" id="r-depr">$0.00</td></tr>
                 <tr><td class="r-label">🗑️ Merma <span class="r-pct" id="r-waste-pct"></span></td><td class="r-val" id="r-waste">$0.00</td></tr>
+                <tr id="row-setup" class="hidden-row"><td class="r-label">🧩 Setup del pedido (única vez)</td><td class="r-val" id="r-setup">$0.00</td></tr>
                 <tr><td class="r-label">⚠️ Riesgo <span class="r-pct" id="r-risk-pct"></span></td><td class="r-val" id="r-risk">$0.00</td></tr>
                 <tr class="section-row"><td colspan="2">Adicionales</td></tr>
                 <tr><td class="r-label">🔧 Postprocesado y acabados</td><td class="r-val" id="r-extras">$0.00</td></tr>
@@ -724,8 +841,12 @@ input:focus, select:focus, textarea:focus {
                   <td class="r-label">⚡ Urgencia <span class="r-pct" id="r-urgency-pct"></span></td>
                   <td class="r-val" id="r-urgency">$0.00</td>
                 </tr>
+                <tr id="row-voldiscount" class="hidden-row discount-val">
+                  <td class="r-label">🏷️ Descuento por volumen <span class="r-pct" id="r-voldiscount-pct"></span></td>
+                  <td class="r-val" id="r-voldiscount">-$0.00</td>
+                </tr>
                 <tr id="row-discount" class="hidden-row discount-val">
-                  <td class="r-label">🏷️ Descuento <span class="r-pct" id="r-discount-pct"></span></td>
+                  <td class="r-label">🏷️ Descuento manual <span class="r-pct" id="r-discount-pct"></span></td>
                   <td class="r-val" id="r-discount">-$0.00</td>
                 </tr>
                 <tr id="row-iva" class="hidden-row">
@@ -735,6 +856,10 @@ input:focus, select:focus, textarea:focus {
                 <tr class="total-row">
                   <td class="r-label" style="color:white; font-size:15px">💵 TOTAL (MXN)</td>
                   <td class="r-val" id="r-total">$0.00</td>
+                </tr>
+                <tr id="row-unitprice" class="hidden-row highlight-row">
+                  <td class="r-label">🧾 Precio por pieza</td>
+                  <td class="r-val" id="r-unitprice">$0.00</td>
                 </tr>
               </tbody>
             </table>
@@ -799,6 +924,16 @@ let cfg = {
   paintBasic: 120,
   paintAdv: 280,
   support: 60,
+  piecesPlate: 1,
+  parallel: 1,
+  failRate: 3,
+  setupFee: 0,
+  tier1Qty: 10,
+  tier1Pct: 5,
+  tier2Qty: 25,
+  tier2Pct: 10,
+  tier3Qty: 50,
+  tier3Pct: 15,
 };
 
 let history = [];
@@ -839,6 +974,16 @@ function saveConfig() {
   cfg.paintBasic   = parseFloat(document.getElementById('c-paint-basic').value) || 120;
   cfg.paintAdv     = parseFloat(document.getElementById('c-paint-adv').value) || 280;
   cfg.support      = parseFloat(document.getElementById('c-support').value) || 60;
+  cfg.piecesPlate  = parseFloat(document.getElementById('c-pieces-plate').value) || 1;
+  cfg.parallel     = parseFloat(document.getElementById('c-parallel').value) || 1;
+  cfg.failRate     = parseFloat(document.getElementById('c-fail-rate').value) || 0;
+  cfg.setupFee     = parseFloat(document.getElementById('c-setup-fee').value) || 0;
+  cfg.tier1Qty     = parseFloat(document.getElementById('c-tier1-qty').value) || 10;
+  cfg.tier1Pct     = parseFloat(document.getElementById('c-tier1-pct').value) || 0;
+  cfg.tier2Qty     = parseFloat(document.getElementById('c-tier2-qty').value) || 25;
+  cfg.tier2Pct     = parseFloat(document.getElementById('c-tier2-pct').value) || 0;
+  cfg.tier3Qty     = parseFloat(document.getElementById('c-tier3-qty').value) || 50;
+  cfg.tier3Pct     = parseFloat(document.getElementById('c-tier3-pct').value) || 0;
   localStorage.setItem('crea3d_cfg3', JSON.stringify(cfg));
   updateDeprDisplay();
   const el = document.getElementById('saved-ok');
@@ -867,6 +1012,16 @@ function loadConfig() {
   document.getElementById('c-paint-basic').value  = cfg.paintBasic;
   document.getElementById('c-paint-adv').value    = cfg.paintAdv;
   document.getElementById('c-support').value      = cfg.support;
+  document.getElementById('c-pieces-plate').value = cfg.piecesPlate;
+  document.getElementById('c-parallel').value     = cfg.parallel;
+  document.getElementById('c-fail-rate').value    = cfg.failRate;
+  document.getElementById('c-setup-fee').value    = cfg.setupFee;
+  document.getElementById('c-tier1-qty').value    = cfg.tier1Qty;
+  document.getElementById('c-tier1-pct').value    = cfg.tier1Pct;
+  document.getElementById('c-tier2-qty').value    = cfg.tier2Qty;
+  document.getElementById('c-tier2-pct').value    = cfg.tier2Pct;
+  document.getElementById('c-tier3-qty').value    = cfg.tier3Qty;
+  document.getElementById('c-tier3-pct').value    = cfg.tier3Pct;
 }
 
 // ==================== MATERIAL CHANGE ====================
@@ -883,6 +1038,18 @@ function toggleSection(checkId, divId) {
   document.getElementById(divId).classList.toggle('show', checked);
 }
 
+function toggleWholesale() {
+  const checked = document.getElementById('t-wholesale').checked;
+  document.getElementById('c-wholesale').classList.toggle('show', checked);
+  if (checked) {
+    const pp = document.getElementById('f-pieces-plate');
+    const pl = document.getElementById('f-parallel');
+    if (!pp.value || pp.value === '1') pp.value = cfg.piecesPlate;
+    if (!pl.value || pl.value === '1') pl.value = cfg.parallel;
+  }
+  calcular();
+}
+
 // ==================== CALCULATE ====================
 function calcular() {
   const qty      = Math.max(1, parseFloat(document.getElementById('f-qty').value) || 1);
@@ -893,6 +1060,13 @@ function calcular() {
   const grams    = parseFloat(document.getElementById('f-grams').value) || 0;
   const matKg    = parseFloat(document.getElementById('f-matkg').value) || 0;
   const colorExtra = parseFloat(document.getElementById('f-color').value) || 0;
+
+  // Mayoreo / producción en lote
+  const wholesaleOn = document.getElementById('t-wholesale').checked;
+  const piecesPlate = wholesaleOn ? Math.max(1, parseFloat(document.getElementById('f-pieces-plate').value) || 1) : 1;
+  const parallel    = wholesaleOn ? Math.max(1, parseFloat(document.getElementById('f-parallel').value) || 1) : 1;
+  const plates      = wholesaleOn ? Math.ceil(qty / piecesPlate) : qty;
+  const failRate    = wholesaleOn ? (cfg.failRate / 100) : 0;
 
   // Postprocesado
   let cPost = 0;
@@ -920,12 +1094,17 @@ function calcular() {
   const deprRate  = cfg.printerCost / cfg.printerLife;
 
   // --- COSTS ---
-  const cLabor    = (laborMin / 60) * cfg.labor * qty;
-  const cEnergy   = printHr * powerKw * cfg.elec * qty;
-  const cMaterial = grams * (matKg / 1000) * qty;
+  // Los costos ligados a tiempo-máquina (mano de obra de supervisión, energía, depreciación)
+  // escalan con el número de PLACAS/impresiones, no con la cantidad de piezas individuales.
+  // Se agrega un buffer de placas extra para cubrir la tasa de fallos esperada en tandas grandes.
+  const platesBuffer = plates * (1 + failRate);
+  const cLabor    = (laborMin / 60) * cfg.labor * platesBuffer / parallel;
+  const cEnergy   = printHr * powerKw * cfg.elec * platesBuffer;
+  const cMaterial = grams * (matKg / 1000) * qty * (1 + failRate);
   const cStl      = parseFloat(document.getElementById('f-stl').value) || 0;
-  const cDepr     = printHr * deprRate * qty;
+  const cDepr     = printHr * deprRate * platesBuffer;
   const cWaste    = cMaterial * (cfg.waste / 100);
+  const cSetup    = wholesaleOn ? cfg.setupFee : 0;
 
   // Design cost
   let cDesign = 0;
@@ -937,7 +1116,7 @@ function calcular() {
   }
 
   // Diseño, Postprocesado y Color se cobran "a costo": no llevan riesgo ni margen de ganancia.
-  const subtotal1   = cLabor + cEnergy + cMaterial + cStl + cDepr + cWaste;
+  const subtotal1   = cLabor + cEnergy + cMaterial + cStl + cDepr + cWaste + cSetup;
   const cRisk       = subtotal1 * (cfg.risk / 100);
   const totalGastos = subtotal1 + cRisk;
 
@@ -951,7 +1130,17 @@ function calcular() {
   const cUrgency   = urgencyPct > 0 ? total * (urgencyPct / 100) : 0;
   total += cUrgency;
 
-  // Discount
+  // Volume discount (automatic, based on qty tiers) — only applies to wholesale orders
+  let volDiscPct = 0;
+  if (wholesaleOn) {
+    if (qty >= cfg.tier3Qty) volDiscPct = cfg.tier3Pct;
+    else if (qty >= cfg.tier2Qty) volDiscPct = cfg.tier2Pct;
+    else if (qty >= cfg.tier1Qty) volDiscPct = cfg.tier1Pct;
+  }
+  const cVolDiscount = volDiscPct > 0 ? total * (volDiscPct / 100) : 0;
+  total -= cVolDiscount;
+
+  // Manual discount
   let cDiscount = 0;
   const discountOn = document.getElementById('t-discount').checked;
   if (discountOn) {
@@ -989,6 +1178,10 @@ function calcular() {
   set('r-profit',   cProfit);
   set('r-total',    total);
 
+  // Setup row
+  toggleRow('row-setup', wholesaleOn && cSetup > 0);
+  set('r-setup', cSetup);
+
   // percentages
   setTxt('r-waste-pct',   `(${cfg.waste}% filamento)`);
   setTxt('r-risk-pct',    `(${cfg.risk}% subtotal)`);
@@ -998,6 +1191,12 @@ function calcular() {
   toggleRow('row-urgency', urgencyPct > 0);
   setTxt('r-urgency-pct', `(+${urgencyPct}%)`);
   set('r-urgency', cUrgency);
+
+  // Volume discount row
+  toggleRow('row-voldiscount', wholesaleOn && cVolDiscount > 0);
+  setTxt('r-voldiscount-pct', `(-${volDiscPct}%)`);
+  const volDiscEl = document.getElementById('r-voldiscount');
+  if (volDiscEl) volDiscEl.textContent = '-' + fmt(cVolDiscount);
 
   // Discount row
   toggleRow('row-discount', discountOn && cDiscount > 0);
@@ -1011,6 +1210,11 @@ function calcular() {
   setTxt('r-iva-pct', `(${cfg.iva}%)`);
   set('r-iva', cIva);
 
+  // Unit price row
+  const unitPrice = qty > 0 ? total / qty : total;
+  toggleRow('row-unitprice', qty > 1);
+  set('r-unitprice', unitPrice);
+
   // Notes
   const notes = document.getElementById('f-notes').value.trim();
   const notesEl = document.getElementById('r-notes-display');
@@ -1019,14 +1223,23 @@ function calcular() {
     notesEl.textContent = notes ? '📝 ' + notes : '';
   }
 
+  // Wholesale info box
+  const platesInfoEl = document.getElementById('dg-plates-info');
+  if (platesInfoEl) platesInfoEl.textContent = wholesaleOn ? `${plates} placa(s) para ${qty} pzs (${piecesPlate}/placa)` : '—';
+  const failInfoEl = document.getElementById('dg-fail-info');
+  if (failInfoEl) failInfoEl.textContent = wholesaleOn ? `+${cfg.failRate}% (${(platesBuffer - plates).toFixed(2)} placas extra)` : '—';
+  const volDiscInfoEl = document.getElementById('dg-vol-disc-info');
+  if (volDiscInfoEl) volDiscInfoEl.textContent = wholesaleOn ? (volDiscPct > 0 ? `${volDiscPct}% (cantidad ≥ umbral)` : 'Ninguno (no alcanza el mínimo)') : '—';
+
   // DATOS GENERALES
   const kwhUsed = printHr * powerKw;
   document.getElementById('dg-time').textContent  = printMin.toFixed(0);
   document.getElementById('dg-kwh').textContent   = kwhUsed.toFixed(3);
   document.getElementById('dg-grams').textContent = (grams * qty).toFixed(0);
   document.getElementById('dg-gastos').textContent= fmt(totalGastos);
+  document.getElementById('dg-unit-price').textContent = fmt(unitPrice);
 
-  window._calc = { cLabor, cEnergy, cMaterial, cStl, cDepr, cWaste, cRisk, cDesign, cPost, cProfit, cShip, cColor, cUrgency, cDiscount, cIva, totalGastos, total, qty, printMin, kwhUsed, grams };
+  window._calc = { cLabor, cEnergy, cMaterial, cStl, cDepr, cWaste, cSetup, cRisk, cDesign, cPost, cProfit, cShip, cColor, cUrgency, cVolDiscount, cDiscount, cIva, totalGastos, total, qty, printMin, kwhUsed, grams, plates, unitPrice };
 }
 
 function fmt(n) {
@@ -1054,6 +1267,9 @@ function getFormData() {
     matkg: document.getElementById('f-matkg').value,
     stl: document.getElementById('f-stl').value,
     qty: document.getElementById('f-qty').value,
+    wholesaleOn: document.getElementById('t-wholesale').checked,
+    piecesPlate: document.getElementById('f-pieces-plate').value,
+    parallel: document.getElementById('f-parallel').value,
     designOn: document.getElementById('t-design').checked,
     designH: document.getElementById('f-design-h').value,
     designComplex: document.getElementById('f-design-complex').value,
@@ -1086,6 +1302,11 @@ function setFormData(d) {
   document.getElementById('f-matkg').value = d.matkg ?? '600';
   document.getElementById('f-stl').value = d.stl ?? '0';
   document.getElementById('f-qty').value = d.qty ?? '1';
+
+  document.getElementById('t-wholesale').checked = !!d.wholesaleOn;
+  document.getElementById('f-pieces-plate').value = d.piecesPlate ?? '1';
+  document.getElementById('f-parallel').value = d.parallel ?? '1';
+  document.getElementById('c-wholesale').classList.toggle('show', !!d.wholesaleOn);
 
   document.getElementById('t-design').checked = !!d.designOn;
   document.getElementById('f-design-h').value = d.designH ?? '1';
@@ -1300,9 +1521,12 @@ function resetForm() {
   document.getElementById('f-color').value   = '0';
   document.getElementById('f-stl').value     = '0';
   document.getElementById('f-qty').value     = '1';
+  document.getElementById('f-pieces-plate').value = '1';
+  document.getElementById('f-parallel').value = '1';
   document.getElementById('f-ship-type').value = '0';
   document.getElementById('f-urgency').value   = '0';
   document.getElementById('f-notes').value     = '';
+  document.getElementById('t-wholesale').checked = false;
   document.getElementById('t-design').checked   = false;
   document.getElementById('t-sand').checked     = false;
   document.getElementById('t-paint').checked    = false;
@@ -1310,6 +1534,7 @@ function resetForm() {
   document.getElementById('t-assembly').checked = false;
   document.getElementById('t-discount').checked = false;
   document.getElementById('t-iva').checked      = false;
+  document.getElementById('c-wholesale').classList.remove('show');
   document.getElementById('c-design').classList.remove('show');
   document.getElementById('c-sand').classList.remove('show');
   document.getElementById('c-paint').classList.remove('show');
